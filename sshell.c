@@ -71,13 +71,11 @@ char CheckCommand(char *cmd, char *isBackground)
     
     if (*end == '|' || *end == '>' || *end == '<') {    /* Check the character at the end         */
         ThrowError("Error: invalid command line");
-        printf("bbbbbbb");
         return 1;
     }
     
     if (s == '|' || s == '>' || s == '<' || s == '&') { /* Check the character at the beginning   */
         ThrowError("Error: invalid command line");
-        printf("asdfasdf");
         return 1;
     }
     
@@ -182,22 +180,22 @@ char RunCommand(char *cmdLine)
     if (CheckCommand(cmdLine, isBackground))             /* Check for invalid character placement */
         return 0;
 
-    Cmds = Pipes2Arrays(cmdLine);                       /* Breakup command into  *array[][]      */
+    Cmds = Pipes2Arrays(cmdLine);                        /* Breakup command into  *array[][]      */
 
-    if (Cmds[0] == NULL)                                /* Return if nothing in command line     */
+    if (Cmds[0] == NULL)                                 /* Return if nothing in command line     */
         return 0;
     
-    if (!strcmp(Cmds[0][0], "exit"))                    /* 'exit' forces main loop to break      */
+    if (!strcmp(Cmds[0][0], "exit"))                     /* 'exit' forces main loop to break      */
         return 1;
     
-    if (!strcmp(Cmds[0][0], "cd"))                      /* If first command = "cd"               */
-        CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]), 0);/* CD and print +completed message       */
+    if (!strcmp(Cmds[0][0], "cd"))                       /* If first command = "cd"               */
+        CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]), 0); /* CD and print +completed message       */
 
-    else if (!strcmp(Cmds[0][0], "pwd")) {              /* first command = "pwd"                 */
-        CompleteCmd(cmdCopy, PrintDir(&Cmds[0][1]), 1); /* pwd print +completed message          */
+    else if (!strcmp(Cmds[0][0], "pwd")) {               /* first command = "pwd"                 */
+        CompleteCmd(cmdCopy, PrintDir(&Cmds[0][1]), 1);  /* pwd print +completed message          */
         
     } else {
-        ExecProgram((char ***)Cmds, 0, STDIN_FILENO, *isBackground);
+        exitCode = ExecProgram((char ***)Cmds, 0, STDIN_FILENO, *isBackground);
         CompleteCmd(cmdCopy, exitCode, 0);
     }
     return 0;
@@ -232,17 +230,15 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
        int fdOut[2];                                    /* Create file descriptor */
     
        pipe(fdOut);                                     /* Create pipe */
-       if ((PID =fork()) != 0) {                        /* Parent Process*/
+       if ((PID =fork()) == 0) {                        /* Parent Process*/
            close(fdOut[0]);                             /* Don't need to read from pipe */
-           dup2(fdOut[1], STDOUT_FILENO);               /* Replace stdout with the pipe */
-           close(fdOut[1]);                             /* Close now unused file descriptor */
+           dup2(FD, STDIN_FILENO);                      /* Replace stdout with the pipe */
+           dup2(fdOut[1], STDOUT_FILENO);
            execvp(cmds[N][0], cmds[N]);
-      } else if (PID == 0) {                            /* Child Process*/
+      } else if (PID > 0) {                             /* Child Process*/
             close(fdOut[1]);                            /* Don't need to write to pipe */
-           close(FD);                                   /* Close existing stdout */
-           dup(FD);                                     /* And replace it with the pipe */
-           close(FD);                                   /* Close now unused file descriptor */
-          // exec(process2);
+            close(FD);                                  /* Close existing stdout */
+            ExecProgram(cmds, N+1, fdOut[0], BG);
        }
     }
     return 0;
