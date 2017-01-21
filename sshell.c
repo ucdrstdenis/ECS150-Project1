@@ -169,7 +169,7 @@ char CheckCommand(char *cmd, char *isBackground)
 /* **************************************************** */
 void execProgram(char **cmds[], int fdIn, char isBG) 
 {
-  //  static unsigned int N = 0;                          /* Maintains which command to be run next */
+  //  static unsigned int N = 0;                         /* Maintains which command to be run next */
     int fdOut[2];    
     
     pipe(fdOut);                                        /* Create pipe */
@@ -183,7 +183,7 @@ void execProgram(char **cmds[], int fdIn, char isBG)
         close(fdOut[1]);                                /* Don't need to write to pipe */
         close(fdIn);                                    /* Close existing stdout */
         dup(fdIn);                                      /* And replace it with the pipe */
-        close(fdIn);                                   /* Close now unused file descriptor */
+        close(fdIn);                                    /* Close now unused file descriptor */
        // exec(process2);
     } 
 }
@@ -274,7 +274,9 @@ mainLoop:                                               /* Shell main loop label
         /* ARROW KEYS */
         else if (keystroke == ESCAPE) {
             if (GetChar() == ARROW) {
+
                 keystroke = GetChar();
+
                 if (keystroke == UP)
                    DisplayNextEntry(history, cmdLine, &cursorPos);
                 else if (keystroke == DOWN)
