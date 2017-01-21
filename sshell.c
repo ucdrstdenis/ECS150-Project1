@@ -18,21 +18,22 @@ char *RemoveWhitespace(char *string)
 {
     unsigned int i = strlen(string);
     
-    while (isspace(*string)) string++;                  /* Remove leading whitespace  */
     while (isspace(string[i])) string[i--] = '\0';      /* Remove trailing whitespace */
-    
+    while (isspace(*string)) string++;                  /* Remove leading whitespace  */
+
     return string;                                      /* Return updated start address of string */
 }
 
 /* Breaks up a command into a dynamically allocated array of arguments  */
-/* "ls -l -a" -> {"ls","-l","-a", NULL};                    */
+/* "ls -l -a" -> {"ls","-l","-a", NULL};                                */
 char **Cmd2Array(char *cmd)
 {
-    unsigned int i = 0;
     char **args =  (char **)malloc(MAX_TOKENS * sizeof(char*)); 
+    char *space;
+    unsigned int i = 0; 
     cmd = RemoveWhitespace(cmd);                        /* Remove leading/trailing whitespace */
-    char *space = strchr(cmd, ' ');                     /* space points to the first occurance of ' ' in cmd */
-
+    space = strchr(cmd, ' ');                           /* space points to the first occurance of ' ' in cmd */
+   
     while(space != NULL) {                              /* Repeat until no more ' ' found */
         *space = '\0';                                  /* Replace ' ' with '\0' */
         args[i] = (char *)malloc(strlen(cmd)+1);        /* Allocate space for the cmd string */
@@ -61,11 +62,13 @@ char **Cmd2Array(char *cmd)
 char ***Pipes2Arrays(char *cmd){
     unsigned int i = 0;
     char ***pipes =  (char ***)malloc(MAX_TOKENS * sizeof(char**));
-    cmd = RemoveWhitespace(cmd);                        /* Remove leading/trailing whitespace */
     char *psizzle = strchr(cmd, '|');                   /* psizzle points to the first occurance of '|' in cmd */
-    
+
+    if (psizzle == NULL)                                /* If no '|' found */
+        pipes[i++] = Cmd2Array(cmd);                    /* Make sure Cmd2Array is called once for allocation */
+
     while(psizzle != NULL) {                            /* Repeat until no more '|' found */
-        psizzle = '\0';                                 /* Replace '|' with '\0; */
+        *psizzle = '\0';                                /* Replace '|' with '\0; */
         pipes[i++] = Cmd2Array(cmd);                    /* Put the null terminated array into the pipes array */
         cmd = RemoveWhitespace(psizzle+1);              /* Remove leading/trailing whitespace of the remaining part of the command*/
         psizzle = strchr(cmd, '|');          
@@ -73,7 +76,7 @@ char ***Pipes2Arrays(char *cmd){
 
     if (*cmd != '\0')
         pipes[i++] = Cmd2Array(cmd);
-    
+
     pipes[i] = NULL;
     return pipes;    
 }
@@ -81,7 +84,6 @@ char ***Pipes2Arrays(char *cmd){
 char RunCommand(char *cmdLine)
 {
    cmdLine = RemoveWhitespace(cmdLine); 
-   
    char ***pipes = Pipes2Arrays(cmdLine);
 
    if (pipes[0][0] == NULL) /* Return if nothing in command line */
