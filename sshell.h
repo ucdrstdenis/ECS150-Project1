@@ -23,7 +23,7 @@ void InitShell (History *history, int *cursorPos);      /* Initialize the shell 
 void ThrowError (char *message);                        /* Print error message to STDERR                        */
 char ChangeDir(char *args[]);                           /* Handlse 'cd' commands                                */
 char PrintDir(char *args[]);                            /* Print Working Direcory 				                */
-void execProgram(char **cmds[], int fdIn, char isBG); 	/* Execute program commands, recursive if piped       	*/ 
+void ExecProgram(char **cmds[], int N, int FD, char BG);/* Execute program commands, recursive if piped       	*/ 
 void CompleteCmd (char *cmd, char exitCode);        	/* Prints + completed messages to STDOUT                */
 char CheckCommand(char *cmd, char *isBackground);   	/* Check for invalid placement of special characters    */
 char RunCommand (char *cmdLine);                    	/* Wrapper to execute whatever is on the command line   */

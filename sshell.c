@@ -165,12 +165,15 @@ char CheckCommand(char *cmd, char *isBackground)
 
 /* **************************************************** */
 /* Function to execute program commands                 */
-/* If function is piped, execProgram is recursive       */
+/* If function is piped, execProgram() is recursive     */
 /* **************************************************** */
-void execProgram(char **cmds[], int fdIn, char isBG) 
+void ExecProgram(char **cmds[], int N, int FD, char BG) 
 {
-  //  static unsigned int N = 0;                         /* Maintains which command to be run next */
-    int fdOut[2];    
+    if (cmds[N+1] == NULL) {
+        execvp(cmds[N][0], cmds[N]);
+        ThrowError("execvp: No such file or directory");
+    }
+    int fdOut[2];                                       /* Create file descriptor */
     
     pipe(fdOut);                                        /* Create pipe */
     pid_t PID = fork();                                 /* Save the PID */
@@ -178,12 +181,12 @@ void execProgram(char **cmds[], int fdIn, char isBG)
         close(fdOut[0]);                                /* Don't need to read from pipe */
         dup2(fdOut[1], STDOUT_FILENO);                  /* Replace stdout with the pipe */
         close(fdOut[1]);                                /* Close now unused file descriptor */
-      //  execvp(process1);
+        execvp(cmds[0][0], cmds[0]);
     } else if (PID == 0) {                              /* Child Process*/
         close(fdOut[1]);                                /* Don't need to write to pipe */
-        close(fdIn);                                    /* Close existing stdout */
-        dup(fdIn);                                      /* And replace it with the pipe */
-        close(fdIn);                                    /* Close now unused file descriptor */
+        close(FD);                                      /* Close existing stdout */
+        dup(FD);                                        /* And replace it with the pipe */
+        close(FD);                                      /* Close now unused file descriptor */
        // exec(process2);
     } 
 }
@@ -323,7 +326,7 @@ mainLoop:                                               /* Shell main loop label
     }
 
     write(STDOUT_FILENO, EXITLINE, strlen(EXITLINE));
-    ResetCanMode();     /* Switch back to previous terminal mode */
+    ResetCanMode();                                         /* Switch back to previous terminal mode */
     
     return EXIT_SUCCESS;
 }
