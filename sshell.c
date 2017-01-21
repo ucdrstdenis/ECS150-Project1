@@ -276,19 +276,17 @@ mainLoop:                                               /* Shell main loop label
         
         /* ARROW KEYS */
         else if (keystroke == ESCAPE) {
-            if (GetChar() == ARROW) {
-
-                keystroke = GetChar();
-
-                if (keystroke == UP)
-                   DisplayNextEntry(history, cmdLine, &cursorPos);
-                else if (keystroke == DOWN)
-                    DisplayPrevEntry(history, cmdLine, &cursorPos);
-                else if (keystroke == LEFT)
-                    ErrorBell();
-                else if (keystroke == RIGHT)
-                    ErrorBell();
-            }
+            if (GetChar() == ARROW)
+                switch(GetChar()) {
+                    case UP:
+                        DisplayNextEntry(history, cmdLine, &cursorPos);
+                    case DOWN:
+                        DisplayPrevEntry(history, cmdLine, &cursorPos);
+                    case LEFT:
+                        ErrorBell();
+                    case RIGHT:
+                        ErrorBell();
+                }
             continue;
         }
        
