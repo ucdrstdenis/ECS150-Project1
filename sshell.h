@@ -25,6 +25,7 @@ char ChangeDir(char *args[]);                       /* Handlse 'cd' commands    
 char PrintDir(char *args[]);			    /* Print Working Direcory 				    */
 char RunCommand (char *cmdLine);                    /* Wrapper to execute whatever is on the command line   */
 void CompleteCmd (char *cmd, char exitCode);        /* Prints + completed messages to STDOUT                */
+char CheckCommand(char *cmd);			    /* Check for invalid placement of special characters    */
 char *RemoveWhitespace (char *string);              /* Stripes trailing or leading whitespace from a string */
 char **Cmd2Array (char *cmd);                       /* Breaks up  a command into an array of arguments      */
 char ***Pipes2Array (char *cmd);                    /* Breaks up command into arrays of piped arguments     */     

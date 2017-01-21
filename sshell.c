@@ -28,7 +28,7 @@ void CompleteCmd (char *cmd, char exitCode)
 /* **************************************************** */
 void ThrowError (char *msg)
 {
-    write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
+    write(STDERR_FILENO, NEWLINE, strlen(NEWLINE));
     write(STDERR_FILENO, msg, strlen(msg));
 }                    
 /* **************************************************** */
@@ -80,7 +80,7 @@ char **Cmd2Array(char *cmd)
 
 /* **************************************************** */
 /* Breaks up  a command into a double array of cmds     */
-/* "ls -la|grep filename" -> {args0,args1,NULL}         */
+/* "ls -la|grep filename" -> {args0, args1, NULL}       */
 /* where args0 = {"ls", "-la", NULL} and                */
 /* where args1 = {"grep","filename", NUll}              */
 /*         AND                                          */
@@ -127,6 +127,24 @@ char ChangeDir(char *args[])
 /* **************************************************** */
 char PrintDir(char *args[])
 {
+    //getcwd();
+    return 0;
+}
+/* **************************************************** */
+
+/* **************************************************** */
+/* Check for invalid placement of special characters    */
+/* **************************************************** */
+char CheckCommand(char *cmd)
+{
+    char end = *(cmd + strlen(cmd));                    /* Get the last character in the array    */
+
+    /* If it ends in (| or > or <), or starts with &    */
+    if (end == '|' || end == '>' || end == '<' || *cmd == '&') {   
+        ThrowError("Error: invalid command line");
+        return 1;
+    }
+
     return 0;
 }
 /* **************************************************** */
@@ -140,6 +158,9 @@ char RunCommand(char *cmdLine)
    strcpy(cmdCopy, cmdLine);                            /* Make the copy                         */
 
    cmdLine = RemoveWhitespace(cmdLine); 		        /* Remove leading/trailing whitespace    */
+   if (CheckCommand(cmdLine))                           /* Check for invalid character placement */
+        return 0;
+
    char ***Cmds = Pipes2Arrays(cmdLine);                /* Breakup command into double array[][] */
 
    if (Cmds[0][0] == NULL)                              /* Return if nothing in command line     */
