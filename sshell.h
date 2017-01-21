@@ -12,23 +12,24 @@ const char *BACKSPACE_CHAR = "\b \b";
 /* ************************************ */
 
 /* ************************************ */
-/*          Global Structures           */
+/*          Global Variables            */
 /* ************************************ */
 unsigned int backgroundCmdRunning = 0;
 
 /* ************************************ */
 /*               SShell                 */
 /* ************************************ */
-void InitShell (History *history, int *cursorPos);  /* Initialize the shell and relevant objects            */
-void ThrowError (char *message);                    /* Print error message to STDERR                        */
-char ChangeDir(char *args[]);                       /* Handlse 'cd' commands                                */
-char PrintDir(char *args[]);			    /* Print Working Direcory 				    */
-void CompleteCmd (char *cmd, char exitCode);        /* Prints + completed messages to STDOUT                */
-char CheckCommand(char *cmd);			    /* Check for invalid placement of special characters    */
-char RunCommand (char *cmdLine);                    /* Wrapper to execute whatever is on the command line   */
-char *RemoveWhitespace (char *string);              /* Stripes trailing or leading whitespace from a string */
-char **Cmd2Array (char *cmd);                       /* Breaks up  a command into an array of arguments      */
-char ***Pipes2Array (char *cmd);                    /* Breaks up command into arrays of piped arguments     */     
+void InitShell (History *history, int *cursorPos);      /* Initialize the shell and relevant objects            */
+void ThrowError (char *message);                        /* Print error message to STDERR                        */
+char ChangeDir(char *args[]);                           /* Handlse 'cd' commands                                */
+char PrintDir(char *args[]);                            /* Print Working Direcory 				                */
+void execProgram(char **cmds[], int fdIn, char isBG); 	/* Execute program commands, recursive if piped       	*/ 
+void CompleteCmd (char *cmd, char exitCode);        	/* Prints + completed messages to STDOUT                */
+char CheckCommand(char *cmd, char *isBackground);   	/* Check for invalid placement of special characters    */
+char RunCommand (char *cmdLine);                    	/* Wrapper to execute whatever is on the command line   */
+char *RemoveWhitespace (char *string);              	/* Stripes trailing or leading whitespace from a string */
+char **Cmd2Array (char *cmd);                       	/* Breaks up  a command into an array of arguments      */
+char ***Pipes2Array (char *cmd);                    	/* Breaks up command into arrays of piped arguments     */     
 /* ************************************ */
 
 #endif

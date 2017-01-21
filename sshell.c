@@ -80,16 +80,18 @@ char **Cmd2Array(char *cmd)
 
 /* **************************************************** */
 /* Breaks up  a command into a double array of cmds     */
+/*                     Example  1                       */
 /* "ls -la|grep filename" -> {args0, args1, NULL}       */
-/* where args0 = {"ls", "-la", NULL} and                */
-/* where args1 = {"grep","filename", NUll}              */
-/*         AND                                          */
+/* where args0 = {"ls", "-la", NULL}                    */
+/* where args1 = {"grep", "filename", NUll}             */
+/*                     Example  2                       */
 /* "ls -la" -> {args0, NULL}                            */
 /* where args0 = {"ls", "-la", NULL}                    */
 /* **************************************************** */
 char ***Pipes2Arrays(char *cmd){
     unsigned int i = 0;
     char ***pipes =  (char ***)malloc(MAX_TOKENS * sizeof(char**));
+    cmd = RemoveWhitespace(cmd); 		                /* Remove leading/trailing whitespace                   */
     char *bar = strchr(cmd, '|');                       /* bar points to the first occurance of '|' in cmd      */
 
     if (bar == NULL)                                    /* If no '|' found                                      */
@@ -102,8 +104,8 @@ char ***Pipes2Arrays(char *cmd){
         bar = strchr(cmd, '|');                         /* bar points to the first occurance of '|' in cmd      */ 
     }
 
-    if (*cmd != '\0')
-        pipes[i++] = Cmd2Array(cmd);
+    if (*cmd != '\0')                                   /* If there are still characters in cmd                 */
+        pipes[i++] = Cmd2Array(cmd);                    /* Add them to the array                                */
 
     pipes[i] = NULL;
     return pipes;    
@@ -134,39 +136,73 @@ char PrintDir(char *args[])
 
 /* **************************************************** */
 /* Check for invalid placement of special characters    */
+/* Also set background flag if '&' is last character    */
 /* **************************************************** */
-char CheckCommand(char *cmd)
+char CheckCommand(char *cmd, char *isBackground)
 {
     char s  = *cmd;                                     /* Get the first character in the array   */
-    char end = *(cmd + strlen(cmd));                    /* Get the last character in the array    */
+    unsigned int len = strlen(cmd);                     /* length of cmd                          */
+    char end = *(cmd + len);                            /* Get the last character in the array    */
 
     if (end == '|' || end == '>' || end == '<') {       /* Check the character at the end         */
         ThrowError("Error: invalid command line");
         return 1;
     }
     
-    if (s == '|' || s == '>' || s == '<' || s == '&') { /* Check the character at the beginning  */
+    if (s == '|' || s == '>' || s == '<' || s == '&') { /* Check the character at the beginning   */
         ThrowError("Error: invalid command line");
         return 1;
     }    
+
+    if (end == '&') {                                   /* If '&' is last character               */
+        *isBackground = 1;                              /* Set the Background flag                */
+        cmd[len] = '\0';                                /* Remove '&' from the command            */
+    }
 
     return 0;
 }
 /* **************************************************** */
 
 /* **************************************************** */
+/* Function to execute program commands                 */
+/* If function is piped, execProgram is recursive       */
+/* **************************************************** */
+void execProgram(char **cmds[], int fdIn, char isBG) 
+{
+  //  static unsigned int N = 0;                          /* Maintains which command to be run next */
+    int fdOut[2];    
+    
+    pipe(fdOut);                                        /* Create pipe */
+    pid_t PID = fork();                                 /* Save the PID */
+    if (PID > 0) {                                      /* Parent Process*/
+        close(fdOut[0]);                                /* Don't need to read from pipe */
+        dup2(fdOut[1], STDOUT_FILENO);                  /* Replace stdout with the pipe */
+        close(fdOut[1]);                                /* Close now unused file descriptor */
+      //  execvp(process1);
+    } else if (PID == 0) {                              /* Child Process*/
+        close(fdOut[1]);                                /* Don't need to write to pipe */
+        close(fdIn);                                    /* Close existing stdout */
+        dup(fdIn);                                      /* And replace it with the pipe */
+        close(fdIn);                                   /* Close now unused file descriptor */
+       // exec(process2);
+    } 
+}
+
+/* **************************************************** */
+/* **************************************************** */
 /* Wrapper to execute whatever is on the command line   */
 /* **************************************************** */
 char RunCommand(char *cmdLine)
 {
+   char *isBackground = 0;                              /* Flag for background commands          */
    char *cmdCopy = (char *)malloc(strlen(cmdLine)+1);   /* Holds copy of the command line        */
    strcpy(cmdCopy, cmdLine);                            /* Make the copy                         */
 
    cmdLine = RemoveWhitespace(cmdLine); 		        /* Remove leading/trailing whitespace    */
-   if (CheckCommand(cmdLine))                           /* Check for invalid character placement */
+   if (CheckCommand(cmdLine, isBackground))             /* Check for invalid character placement */
         return 0;
 
-   char ***Cmds = Pipes2Arrays(cmdLine);                /* Breakup command into double array[][] */
+   char ***Cmds = Pipes2Arrays(cmdLine);                /* Breakup command into  *array[][]      */
 
    if (Cmds[0][0] == NULL)                              /* Return if nothing in command line     */
         return 0;
@@ -174,7 +210,7 @@ char RunCommand(char *cmdLine)
     if (!strcmp(Cmds[0][0], "exit"))                    /* 'exit' forces main loop to break      */
         return 1;
     
-    if (!strcmp(Cmds[0][0], "cd"))                      /* If first command = "cd"              */
+    if (!strcmp(Cmds[0][0], "cd"))                      /* If first command = "cd"               */
         CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]));
 
     else if (!strcmp(Cmds[0][0], "pwd")) {
@@ -186,6 +222,9 @@ char RunCommand(char *cmdLine)
 }
 /* **************************************************** */
 
+/* **************************************************** */
+/* Shell Initialization function                        */
+/* **************************************************** */
 void InitShell(History *history, int *cursorPos)
 {
     /* Initialize history */
@@ -204,7 +243,8 @@ int main(int argc, char *argv[], char *envp[])
     int cursorPos = 0;
     char keystroke, cmdLine[BUFFER_SIZE];
     unsigned char tryExit = 0;
-    History *history = (History*) malloc(sizeof(History));
+
+    History *history = (History*)malloc(sizeof(History));
 
     InitShell(history, &cursorPos);                     /* Initialize the shell */
 
@@ -271,8 +311,8 @@ mainLoop:                                               /* Shell main loop label
 
     if (backgroundCmdRunning) {                             /* If background commands are still running */
         ThrowError("Error: active jobs still running");     /* Report the error */
-            if(tryExit) {                                   /* If the command was "exit", as opposed to Ctrl+D */
-                CompleteCmd("exit", 1);                 /* Print '+ completed' message */ 
+            if(tryExit) {                                   /* If the command was "exit" (as opposed to Ctrl+D) */
+                CompleteCmd("exit", 1);                     /* Print '+ completed' message */ 
                 tryExit = 0;                                /* Reset the variable */
             }
 
