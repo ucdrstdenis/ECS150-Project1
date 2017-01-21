@@ -39,8 +39,8 @@ void ThrowError (char *msg)
 /* **************************************************** */
 
 /* **************************************************** */
-/* @TODO search the PATH variable for the location of   */
-/* the specified binary                                 */
+/* Searches the PATH variable for the location of       */
+/* the specified program                                */
 /* Example - "ls" returns "/bin/ls"                     */
 /* **************************************************** */
 char *SearchPath(char *prog) {
