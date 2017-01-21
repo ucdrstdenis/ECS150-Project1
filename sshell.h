@@ -22,8 +22,9 @@ unsigned int backgroundCmdRunning = 0;
 void InitShell (History *history, int *cursorPos);      /* Initialize the shell and relevant objects            */
 void ThrowError (char *message);                        /* Print error message to STDERR                        */
 char ChangeDir(char *args[]);                           /* Handlse 'cd' commands                                */
-char PrintDir(char *args[]);                            /* Print Working Direcory 				                */
-int ExecProgram(char **cmds[], int N, int FD, char BG); /* Execute program commands, recursive if piped       	*/
+char PrintDir(char *args[]);                            /* Print Working Direcory                               */
+char *SearchPath(char *prog);	                        /* Returns a pointer to the full path specified binary  */
+int  ExecProgram(char **cmds[], int N, int FD, char BG);/* Execute program commands, recursive if piped       	*/
 void CompleteCmd (char *cmd, char exitCode, char newLn);/* Prints + completed messages to STDOUT                */
 char CheckCommand(char *cmd, char *isBackground);   	/* Check for invalid placement of special characters    */
 char RunCommand (char *cmdLine);                    	/* Wrapper to execute whatever is on the command line   */

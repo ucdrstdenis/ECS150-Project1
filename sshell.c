@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/wait.h>
 
 #include "common.h"
 #include "history.h"
@@ -17,11 +18,12 @@
 /* **************************************************** */
 void CompleteCmd (char *cmd, char exitCode, char newLn)
 {
-    char msg[BUFFER_SIZE + 25];
+    char msg[MAX_BUFFER + 25];
     if (newLn)
         sprintf(msg, "\n+ completed '%s' [%d]", cmd, exitCode);
     else
         sprintf(msg, "+ completed '%s' [%d]", cmd, exitCode);
+
     write(STDOUT_FILENO, msg, strlen(msg));
 }
 /* **************************************************** */
@@ -36,6 +38,38 @@ void ThrowError (char *msg)
 }                    
 /* **************************************************** */
 
+/* **************************************************** */
+/* @TODO search the PATH variable for the location of   */
+/* the specified binary                                 */
+/* Example - "ls" returns "/bin/ls"                     */
+/* **************************************************** */
+char *SearchPath(char *prog) {
+    unsigned int len = strlen(prog);                    /* Length of the string of the passed program  */
+    char *binary  = (char *) malloc(MAX_BUFFER+len);    /* Pointer to hold the full name of the binary */
+    char *PATH = getenv("PATH");                        /* Store contents of the PATH variable         */
+    char *semi = strchr(PATH, ':');                     /* semi points to the first place ':' occurs   */
+
+    while(semi != NULL) {                               /* Repeat until no more ':' found              */
+        *semi = '\0';                                   /* Terminate the string */
+        sprintf(binary, "%s/%s", PATH, prog);           /* Append binary to first path                 */
+        if(access(binary, F_OK) != -1)                  /* If binary exists                            */
+            return binary;
+        PATH = semi+1;                                  /* Update the address PATH points to           */
+        semi = strchr(PATH, ':');                       /* semi points to the next place ':' occurs    */
+    }
+
+    if (semi == NULL) {        
+        sprintf(binary, "%s/%s", PATH, prog);           /* Append binary to first path                 */
+        if(access(binary, F_OK) != -1)                  /* If binary exists                            */
+            return binary;
+        
+        else {                                          /* If it doesn't exists */
+            //@TODO;
+        }       
+    }
+
+    return binary;
+} 
 /* **************************************************** */
 /* Change Directory Command                             */
 /* **************************************************** */
@@ -52,10 +86,14 @@ char ChangeDir(char *args[])
 /* **************************************************** */
 /* Print Working Directory                              */
 /* **************************************************** */
-/* WORK IN PROGRESS */
 char PrintDir(char *args[])
 {
-    //getcwd();
+    char workingDir[MAX_BUFFER];
+    getcwd(workingDir, MAX_BUFFER);                     /* Write working directory into workingDir */
+    write(STDOUT_FILENO, workingDir, strlen(workingDir));
+
+    // @TODO search through argsp[] and setup output redirect if necesary
+
     return 0;
 }
 /* **************************************************** */
@@ -222,6 +260,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
             return status;
             
         } else {
+            cmds[N][0] = SearchPath(cmds[N][0]);        /* Replace with full PATH to binary name */
             execv(cmds[N][0], cmds[N]);                 /* execute command */
             perror("execv");                            /* coming back here is an error */
             exit(1);                                    /* exit failure */
@@ -261,6 +300,7 @@ void InitShell(History *history, int *cursorPos)
     history->current = NULL;
     
     SetNonCanMode();                                    /* Switch to non-canonical terminal mode */
+    /* PrintWelcomeMessage() */                         //@TODO
     DisplayPrompt(cursorPos, 0);                        /* Print the prompt and clear the cursor position */
 }
 /* **************************************************** */
@@ -271,7 +311,7 @@ void InitShell(History *history, int *cursorPos)
 int main(int argc, char *argv[], char *envp[])
 {
     int cursorPos = 0;
-    char keystroke, cmdLine[BUFFER_SIZE];
+    char keystroke, cmdLine[MAX_BUFFER];
     unsigned char tryExit = 0;
 
     History *history = (History*)malloc(sizeof(History));
@@ -335,7 +375,7 @@ mainLoop:                                               /* Shell main loop label
         
         /* ANY OTHER KEY */
         else {
-            if (cursorPos < BUFFER_SIZE) {
+            if (cursorPos < MAX_BUFFER) {
                 write(STDIN_FILENO, &keystroke, 1);
                 cmdLine[cursorPos++] = keystroke;
             } else

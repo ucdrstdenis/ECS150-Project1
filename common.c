@@ -40,7 +40,7 @@ void ClearCmdLine(char *cmdLine, int *cursorPos)
 /* Print a message to the shell, used in debugging */
 void Print2Shell(int fd, char *message, char newline)
 {
-    char msg2print[BUFFER_SIZE]; 
+    char msg2print[MAX_BUFFER]; 
     int cursorPos = 0;
     int i = 0;
 

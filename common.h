@@ -4,7 +4,7 @@
 /* ************************************ */
 /*     Spec-Defined Assumptions         */
 /* ************************************ */
-#define BUFFER_SIZE   512
+#define MAX_BUFFER    512
 #define MAX_TOKENS     16
 #define MAX_TOKEN_LEN  32
 #define MAX_HIST_ITEMS 10
