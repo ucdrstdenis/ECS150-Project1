@@ -52,6 +52,7 @@ char ChangeDir(char *args[])
 /* **************************************************** */
 /* Print Working Directory                              */
 /* **************************************************** */
+/* WORK IN PROGRESS */
 char PrintDir(char *args[])
 {
     //getcwd();
@@ -211,11 +212,11 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
     int status = 0;                                     /* Holds status */
     pid_t PID;                                          /* Holds the PID */
     
-    if (cmds[N+1] == NULL) {                            /* If there's only 1 array left */
+    if (cmds[N+1] == NULL) {                            /* If there's only 1 command */
         if ((PID = fork()) != 0) {                      /* Parent */
             if (BG) {                                   /* If it's to be run in background */
                 backgroundCmdRunning = 1;               /* SetBackgroundCmd Flag   */
-                return status;                          /* Don't wait for prcess to return               */
+                return status;                          /* Don't wait for prcess to return  */
             }
             waitpid(-1, &status, 0);                    /* wait for child to exit */
             return status;
@@ -226,26 +227,27 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
             exit(1);                                    /* exit failure */
         }
     }
-    else {
-       int fdOut[2];                                    /* Create file descriptor */
     
-       pipe(fdOut);                                     /* Create pipe */
-       if ((PID =fork()) == 0) {                        /* Parent Process*/
-           close(fdOut[0]);                             /* Don't need to read from pipe */
-           dup2(FD, STDIN_FILENO);                      /* Replace stdout with the pipe */
-           dup2(fdOut[1], STDOUT_FILENO);
-           execvp(cmds[N][0], cmds[N]);
-      } else if (PID > 0) {                             /* Child Process*/
-            close(fdOut[1]);                            /* Don't need to write to pipe */
-            close(FD);                                  /* Close existing stdout */
+    /* THIS PART DOESN"T WORK YET */
+    else {
+        int fdOut[2];                                    /* Create file descriptor */
+    
+        pipe(fdOut);                                     /* Create pipe */
+        if ((PID = fork()) == 0) {                       /* Parent Process*/
+            close(fdOut[0]);                             /* Don't need to read from pipe */
+            dup2(FD, STDIN_FILENO);                      /* Replace stdout with the pipe */
+            dup2(fdOut[1], STDOUT_FILENO);
+            execvp(cmds[N][0], cmds[N]);
+        } else if (PID > 0) {                            /* Child Process*/
+            close(fdOut[1]);                             /* Don't need to write to pipe */
+            close(FD);                                   /* Close existing stdout */
             ExecProgram(cmds, N+1, fdOut[0], BG);
-       }
+        }
     }
     return 0;
 }
 
 /* **************************************************** */
-
 
 /* **************************************************** */
 /* Shell Initialization function                        */
@@ -339,7 +341,7 @@ mainLoop:                                               /* Shell main loop label
             } else
                 ErrorBell();
         } 
-    } /* End Main Loop */
+    }                                                       /* End Main Loop */
     
 
     if (backgroundCmdRunning) {                             /* If background commands are still running */
