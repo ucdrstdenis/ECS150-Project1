@@ -137,13 +137,18 @@ char PrintDir(char *args[])
 /* **************************************************** */
 char CheckCommand(char *cmd)
 {
+    char s  = *cmd;                                     /* Get the first character in the array   */
     char end = *(cmd + strlen(cmd));                    /* Get the last character in the array    */
 
-    /* If it ends in (| or > or <), or starts with &    */
-    if (end == '|' || end == '>' || end == '<' || *cmd == '&') {   
+    if (end == '|' || end == '>' || end == '<') {       /* Check the character at the end         */
         ThrowError("Error: invalid command line");
         return 1;
     }
+    
+    if (s == '|' || s == '>' || s == '<' || s == '&') { /* Check the character at the beginning  */
+        ThrowError("Error: invalid command line");
+        return 1;
+    }    
 
     return 0;
 }
