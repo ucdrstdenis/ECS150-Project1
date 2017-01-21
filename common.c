@@ -12,7 +12,7 @@ extern const char *EXITLINE;        /* Defined in sshell.h */
 extern const char *BACKSPACE_CHAR;  /* Defined in sshell.h */
 
 /* Sound Bell noise */
-inline void ErrorBell(void)
+void ErrorBell(void)
 {
     write(STDERR_FILENO, BELL, 1);
 }

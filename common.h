@@ -26,7 +26,7 @@
 /* ************************************ */
 /*               Common                 */
 /* ************************************ */
-inline void ErrorBell(void);                             /* Sound Bell noise                                     */
+void ErrorBell(void);                                    /* Sound Bell noise                                     */
 void Print2Shell (int fd, char *message, char newline);  /* For debugging -Print message on STDOUT               */
 void ClearCmdLine (char *cmdLine, int *cursorPos);       /* Clear the current cmdLine buffer and STDIN           */
 void DisplayPrompt (int *cursorPos, char newline);       /* Displace the main sshell$ prompt                     */
