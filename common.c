@@ -28,8 +28,9 @@ void ErrorBell(void)
 /* **************************************************** */
 void ThrowError (char *msg)
 {
-    sprintf(msg, "\n%s", msg);
-    write(STDERR_FILENO, msg, strlen(msg));
+    char newMsg[MAX_BUFFER];
+    sprintf(newMsg, "%s\n", msg);
+    write(STDERR_FILENO, newMsg, strlen(newMsg));
 }                    
 /* **************************************************** */
 

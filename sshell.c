@@ -95,7 +95,7 @@ char PrintWDir(char *args[])
 {
     char workingDir[MAX_BUFFER];
     getcwd(workingDir, MAX_BUFFER);                     /* Write working directory into workingDir */
-    sprintf(workingDir, "%s\n", workingDir);            /* Add a new line character                 */
+    sprintf(workingDir, "%s\n", workingDir);            /* Add a new line character                */
     write(STDOUT_FILENO, workingDir, strlen(workingDir));
 
     // @TODO search through args[] and setup output redirect if necesary
@@ -138,20 +138,22 @@ char CheckCommand(char *cmd, char *isBackground)
 /* **************************************************** */
 char *RemoveWhitespace(char *string)
 {
-    unsigned int i = strlen(string);                    /* Length of the string                     */
-    //unsigned int iCpy;                                  /* Copy of the original string length       */
     unsigned char repeat = 1;				            /* Be sure to repeat the process if needed  */
+    unsigned int i = strlen(string);                    /* Length of the string                     */
+    unsigned int iCpy;                                  /* Copy of the original string length       */
+
 
     while ( repeat ) {
-	   // iCpy = i;				
+	    iCpy = i;				                        /* Keep track of string length              */
         while (isspace(string[i]))  string[i--] = '\0'; /* Remove trailing whitespace               */
-	  //  while (!isprint(string[i])) string[i--] = '\0'; /* Remove trailing nonprintable i.e \n\t    */
+	    while (string[i] == '\t') string[i--] = '\0';   /* Remove trailing \t                       */
+        while (string[i] == '\n') string[i--] = '\0';   /* Remove trailing \n                       */
         while (isspace(*string))  string++;             /* Remove leading whitespace                */
-	    //while (!isprint(*string)) string++;             /* Remove trailing nonprintable i.e \n\t    */
-	    //if (strlen(string) != iCpy) i = strlen(string); /* If whitespace chars found, update length */
-        //else repeat = 0;                                /* Otherwise exit the loop                  */
-        repeat = 0;    
-    }
+	    while (*string == '\t')   string++;             /* Remove leading \t                        */
+        while (*string == '\n')   string++;             /* Remove leading \n                        */
+	    if (strlen(string) != iCpy) i = strlen(string); /* If whitespace chars found, update length */
+        else repeat = 0;                                /* Otherwise exit the loop                  */  
+   }
     
     return string;                                      /* Return updated start address of string   */
 }
@@ -206,7 +208,7 @@ char ***Pipes2Arrays(char *cmd){
     cmd = RemoveWhitespace(cmd); 		                /* Remove leading/trailing whitespace                   */
     char *bar = strchr(cmd, '|');                       /* bar points to the first occurance of '|' in cmd      */
     
-    while((bar != NULL) && (i < MAX_TOKENS)) {          /* Repeat until no more '|' found or max tokens reached */
+    while(bar != NULL) {                                /* Repeat until no more '|' found or max tokens reached */
         *bar = '\0';                                    /* Replace '|' with '\0                                 */
         pipes[i++] = Cmd2Array(cmd);                    /* Put the cmd array into the pipes array               */
         cmd = RemoveWhitespace(bar+1);                  /* Remove leading/trailing whitespace for remaining part the command*/
@@ -215,9 +217,7 @@ char ***Pipes2Arrays(char *cmd){
     
     if (*cmd != '\0')                                   /* If there are still characters in cmd                 */
         pipes[i++] = Cmd2Array(cmd);                    /* Add them to the array                                */
-    
-    if (i == MAX_TOKENS)                                /* Make sure the number of tokens was not exceeded      */
-        ThrowError("Error: Too many pipes. Attempting anyway ...");       
+         
     
     pipes[i] = NULL;					                /* Set the last entry to be NULL                        */
     return pipes;                                       /* Return the pointer                                   */
@@ -247,10 +247,10 @@ char RunCommand(char *cmdLine)
     
     if (!strcmp(Cmds[0][0], "exit"))                     /* 'exit' forces main loop to break      */
         return 1;
-    
-    if (!strcmp(Cmds[0][0], "cd"))                       /* If first command = "cd"               */
-        CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]));    /* CD and print + completed message      */
 
+    if (!strcmp(Cmds[0][0], "cd")) {                      /* If first command = "cd"               */
+        CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]));    /* CD and print + completed message      */
+    }
     else if (!strcmp(Cmds[0][0], "pwd")) {               /* If first command = "pwd"              */
         CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]));    /* pwd & print + completed message       */
         
@@ -392,7 +392,7 @@ mainLoop:                                               /* Shell main loop label
        
             case RETURN:                                /* ENTER KEY */
                 cmdLine[cursorPos] = '\0';
-                write(STDOUT_FILENO, "\n", 1);
+                write(STDOUT_FILENO, "\n", strlen("\n"));
                 AddHistory(history, cmdLine, cursorPos);
                 /* Check if background commands completed() */
                 if((tryExit = RunCommand(cmdLine)))
@@ -411,11 +411,9 @@ mainLoop:                                               /* Shell main loop label
     }                                                   /* End Main Loop */
 
     if (numJobsRunning) {                               /* If background commands are still running */ 
-        ThrowError("Error: active jobs still running\n");/* Report the error */
+        ThrowError("Error: active jobs still running") ;/* Report the error */
             if(tryExit) {                               /* If the command was "exit" (as opposed to Ctrl+D) */
-                PrintNLErr();                           /* Print a newline on STDERR */
                 CompleteCmd("exit", 1);                 /* Print '+ completed' message */
-                PrintNLErr();                           /* Print a newline on STDERR */
                 tryExit = 0;                            /* Reset the variable */
             }
 
