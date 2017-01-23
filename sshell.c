@@ -24,7 +24,7 @@ void CompleteCmd (char *cmd, char exitCode, char newLn)
     else
         sprintf(msg, "+ completed '%s' [%d]", cmd, exitCode);
 
-    write(STDOUT_FILENO, msg, strlen(msg));
+    write(STERR_FILENO, msg, strlen(msg));
 }
 /* **************************************************** */
 
@@ -300,7 +300,7 @@ void InitShell(History *history, int *cursorPos)
     history->current = NULL;
     
     SetNonCanMode();                                    /* Switch to non-canonical terminal mode */
-    /* PrintWelcomeMessage() */                         //@TODO
+    /* PrintWelcomeMessage() */                         // @TODO
     DisplayPrompt(cursorPos, 0);                        /* Print the prompt and clear the cursor position */
 }
 /* **************************************************** */
