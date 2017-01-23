@@ -13,7 +13,7 @@
 /* **************************************************** */
 #include "common.h"                                     /* Keystrokes and common functions                */
 #include "history.h"                                    /* History structures and related functions       */
-#include "noncanmode.h"                                 /* Modified  version of the file provided by Joel */
+#include "noncanmode.h"                                 /* Modified version of the file provided by Joel  */
 #include "sshell.h"                                     /* Function prototypes for sshell.c functions     */
 /* **************************************************** */
 
@@ -58,7 +58,7 @@ char *SearchPath(char *prog) {
     char *semi = strchr(PATH, ':');                     /* semi points to the first place ':' occurs   */
 
     while(semi != NULL) {                               /* Repeat until no more ':' found              */
-        *semi = '\0';                                   /* Terminate the string                        */
+        *semi = '\0';                                   /* Terminate the string where ':' was          */
         sprintf(binary, "%s/%s", PATH, prog);           /* Append the first path to binary name        */
         if(access(binary, F_OK) != -1)                  /* If binary exists                            */
             return binary;                              /* Return the full name of the binary          */
@@ -81,11 +81,11 @@ char *SearchPath(char *prog) {
 /* **************************************************** */
 char ChangeDir(char *args[])
 {
-    if ((args[0] == NULL) || (chdir(args[0]) == -1)) {  /* If no dir specified or chdir() fails  */
-        ThrowError("Error: no such directory\n");
-        return 1;                                       /* Return error code 1                   */
+    if ((args[0] == NULL) || (chdir(args[0]) == -1)) {  /* If no dir specified or chdir() fails */
+        ThrowError("Error: no such directory\n");       /* Print message on STDERR              */
+        return 1;                                       /* Return error code 1                  */
     }
-    return 0;                                           /* Otherwise return error code 0         */
+    return 0;                                           /* Otherwise return error code 0        */
 }
 /* **************************************************** */
 
@@ -142,7 +142,7 @@ char *RemoveWhitespace(char *string)
     
     while (isspace(string[i])) string[i--] = '\0';      /* Remove trailing whitespace               */
     while (isspace(*string)) string++;                  /* Remove leading whitespace                */
-
+    
     return string;                                      /* Return updated start address of string   */
 }
 /* **************************************************** */
@@ -301,10 +301,10 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
 void InitShell(History *history, int *cursorPos)
 {
     /* Initialize history structure */
-    history->count = 0;
-    history->traversed = 0;
-    history->top = NULL;
-    history->current = NULL;
+    history->count = 0;                                 /* Number of history items = 0 */
+    history->traversed = 0;                             /* Traversed history items = 0 */
+    history->top = NULL;                                /* No history entries yet      */
+    history->current = NULL;                            /* Not currently viewing any entry */
     
     SetNonCanMode();                                    /* Switch to non-canonical terminal mode */
     /* PrintWelcomeMessage() */                         // @TODO
@@ -338,7 +338,6 @@ mainLoop:                                               /* Shell main loop label
                 ErrorBell();
                 break;
             
-            
             case BACKSPACE:                             /* BACKSPACE */
                 if (cursorPos) {
                     write(STDIN_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
@@ -348,29 +347,28 @@ mainLoop:                                               /* Shell main loop label
                     ErrorBell();
                 break;
             
-            
             case ESCAPE:                                /* ARROW KEYS */
                 if (GetChar() == ARROW)
                     switch(GetChar()) {
-                        case UP:
+                        case UP:                        /* UP */
                             DisplayNextEntry(history, cmdLine, &cursorPos);
                             break;
-                        case DOWN:
+                        case DOWN:                      /* DOWN */
                             DisplayPrevEntry(history, cmdLine, &cursorPos);
                             break;
-                        case LEFT:
+                        case LEFT:                      /* LEFT */
                             ErrorBell();
                             break;
-                        case RIGHT:
+                        case RIGHT:                     /* RIGHT */
                             ErrorBell();
                             break;
                     }
                 break;
-                
        
             case RETURN:                                /* ENTER KEY */
                 cmdLine[cursorPos] = '\0';
                 AddHistory(history, cmdLine, cursorPos);
+                /* Check if background commands completed() */
                 write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
                 
                 if((tryExit = RunCommand(cmdLine)))

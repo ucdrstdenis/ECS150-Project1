@@ -2,7 +2,7 @@
 #define _COMMON_H
 
 /* ************************************ */
-/*     Spec-Defined Assumptions         */
+/*      Spec-Defined Assumptions        */
 /* ************************************ */
 #define MAX_BUFFER    512
 #define MAX_TOKENS     16
