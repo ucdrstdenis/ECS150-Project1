@@ -13,8 +13,8 @@
 /* Originates from Joel's noncanmode.c  */
 /* ************************************ */
 
-static struct termios savedParameters;	/* Non-canonical mode management                            */
-static pid_t shell_pid;                 /* PID of shell                                             */
+static struct termios savedParameters;	/* Non-canonical mode management */
+static pid_t shell_pid;                 /* PID of shell */
 
 /* Read one character from the keyboard */
 inline char GetChar(void)
@@ -25,8 +25,8 @@ inline char GetChar(void)
         result = read(STDIN_FILENO, &RxChar, 1);
         if (result < 0) {
             if (errno == EINTR)
-                continue;          /* read() was interrupted, try again */
-            return -1;             /* Otherwise, it's a failure */
+                continue;               /* read() was interrupted, try again */
+            return -1;                  /* Otherwise, it's a failure */
         }
     }
     return RxChar;
