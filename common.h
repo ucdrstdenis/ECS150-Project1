@@ -9,6 +9,9 @@
 #define MAX_TOKEN_LEN  32
 #define MAX_HIST_ITEMS 10
 
+#define TRUE            1
+#define FALSE           0
+
 /* ************************************ */
 /*          Keystroke Codes             */
 /* ************************************ */
