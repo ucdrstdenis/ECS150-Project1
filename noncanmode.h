@@ -2,7 +2,7 @@
 #define _NONCANMODE_H
 
 /* ************************************ */
-/*  Originally from Joel's noncanmode.c */
+/* Originally from Joel's noncanmode.c  */
 /* ************************************ */
 char GetChar (void);                    /* Read one character from the keyboard                     */
 void ResetCanMode (void);               /* Reset the terminal to the saved parameters               */
