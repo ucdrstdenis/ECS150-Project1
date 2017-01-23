@@ -16,4 +16,4 @@ A simple shell written in c
 
 4. [Makefile Reference 2](http://mrbook.org/blog/tutorials/make/)
 
-5. [GitHub Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet);
+5. [GitHub Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
