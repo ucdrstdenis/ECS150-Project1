@@ -180,7 +180,7 @@ char **Cmd2Array(char *cmd)
 
 /* **************************************************** */
 /* Breaks up  a command into dynamically allocated      */
-/* 2D array of pointers to commands                     */
+/* 2D array of command pointers                         */
 /*                     Example  1                       */
 /* "ls -la|grep filename" -> {args0, args1, NULL}       */
 /* where args0 = {"ls", "-la", NULL}                    */
@@ -242,7 +242,8 @@ char RunCommand(char *cmdLine)
         
     } else {                                             /* Otherwise, try executing the program  */
         exitCode = ExecProgram((char ***)Cmds, 0, STDIN_FILENO, *isBackground);
-        CompleteCmd(cmdCopy, exitCode, 0);
+        if(!*isBackground)
+            CompleteCmd(cmdCopy, exitCode, 0);
     }
     return 0;
 }
@@ -276,7 +277,6 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
     /* THIS PART DOESN"T WORK YET */
     else {
         int fdOut[2];                                   /* Create file descriptor                   */
-    
         pipe(fdOut);                                    /* Create pipe                              */
         if ((PID = fork()) == 0) {                      /* Child Process                            */
             close(fdOut[0]);                            /* Don't need to read from pipe             */
@@ -287,7 +287,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
         } else if (PID > 0) {                           /* Parent Process                           */
             close(fdOut[1]);                            /* Don't need to write to pipe              */
             close(FD);                                  /* Close existing stdout                    */
-            ExecProgram(cmds, N+1, fdOut[0], BG);
+            return ExecProgram(cmds, N+1, fdOut[0], BG);
         }
     }
     return 0;
@@ -377,7 +377,6 @@ mainLoop:                                               /* Shell main loop label
                 DisplayPrompt(&cursorPos, 1);
                 break;
         
-                
             default:                                    /* ANY OTHER KEY */
                 if (cursorPos < MAX_BUFFER) {           /* Make sure there's room in the buffer */
                     write(STDIN_FILENO, &keystroke, 1);
