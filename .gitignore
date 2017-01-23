@@ -1,3 +1,6 @@
+# OS X Hidden Files
+*.DS_Store
+
 # Object files
 *.o
 *.ko

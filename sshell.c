@@ -24,7 +24,7 @@ void CompleteCmd (char *cmd, char exitCode, char newLn)
     else
         sprintf(msg, "+ completed '%s' [%d]", cmd, exitCode);
 
-    write(STERR_FILENO, msg, strlen(msg));
+    write(STDERR_FILENO, msg, strlen(msg));
 }
 /* **************************************************** */
 
@@ -41,7 +41,9 @@ void ThrowError (char *msg)
 /* **************************************************** */
 /* Searches the PATH variable for the location of       */
 /* the specified program                                */
-/* Example - "ls" returns "/bin/ls"                     */
+/* Example - *PATH = /usr/bin:/opt/bin                  */
+/*           *prog = "ls"                               */
+/*           returns "/usr/bin/ls"                      */
 /* **************************************************** */
 char *SearchPath(char *prog) {
     unsigned int len = strlen(prog);                    /* Length of the string of the passed program  */
@@ -50,23 +52,19 @@ char *SearchPath(char *prog) {
     char *semi = strchr(PATH, ':');                     /* semi points to the first place ':' occurs   */
 
     while(semi != NULL) {                               /* Repeat until no more ':' found              */
-        *semi = '\0';                                   /* Terminate the string */
-        sprintf(binary, "%s/%s", PATH, prog);           /* Append binary to first path                 */
+        *semi = '\0';                                   /* Terminate the string                        */
+        sprintf(binary, "%s/%s", PATH, prog);           /* Append the first path to binary name        */
         if(access(binary, F_OK) != -1)                  /* If binary exists                            */
-            return binary;
+            return binary;                              /* Return the full name of the binary          */
         PATH = semi+1;                                  /* Update the address PATH points to           */
         semi = strchr(PATH, ':');                       /* semi points to the next place ':' occurs    */
     }
-
-    if (semi == NULL) {        
-        sprintf(binary, "%s/%s", PATH, prog);           /* Append binary to first path                 */
-        if(access(binary, F_OK) != -1)                  /* If binary exists                            */
-            return binary;
-        
-        else {                                          /* If it doesn't exists */
-            //@TODO;
-        }       
-    }
+    
+    sprintf(binary, "%s/%s", PATH, prog);               /* Append binary to first path                 */
+    if(access(binary, F_OK) != -1)                      /* If binary exists                            */
+        return binary;
+    else                                                /* If it doesn't exists                        */
+        binary = prog;
 
     return binary;
 } 
@@ -84,9 +82,9 @@ char ChangeDir(char *args[])
 /* **************************************************** */
 
 /* **************************************************** */
-/* Print Working Directory                              */
+/* Print Working Directory  (handles pwd)               */
 /* **************************************************** */
-char PrintDir(char *args[])
+char PrintWDir(char *args[])
 {
     char workingDir[MAX_BUFFER];
     getcwd(workingDir, MAX_BUFFER);                     /* Write working directory into workingDir */
@@ -132,7 +130,7 @@ char CheckCommand(char *cmd, char *isBackground)
 /* **************************************************** */
 char *RemoveWhitespace(char *string)
 {
-    unsigned int i = strlen(string);
+    unsigned int i = strlen(string);                    /* Length of the string       */
     
     while (isspace(string[i])) string[i--] = '\0';      /* Remove trailing whitespace */
     while (isspace(*string)) string++;                  /* Remove leading whitespace  */
@@ -231,7 +229,7 @@ char RunCommand(char *cmdLine)
         CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]), 0); /* CD and print +completed message       */
 
     else if (!strcmp(Cmds[0][0], "pwd")) {               /* first command = "pwd"                 */
-        CompleteCmd(cmdCopy, PrintDir(&Cmds[0][1]), 1);  /* pwd print +completed message          */
+        CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]), 1); /* pwd print +completed message          */
         
     } else {
         exitCode = ExecProgram((char ***)Cmds, 0, STDIN_FILENO, *isBackground);
@@ -259,8 +257,9 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
             waitpid(-1, &status, 0);                    /* wait for child to exit */
             return status;
             
-        } else {
+        } else {                                        /* Child */
             cmds[N][0] = SearchPath(cmds[N][0]);        /* Replace with full PATH to binary name */
+            //if (cmds[N][0] == NULL)                     /* If the binary can't be found in the PATH */
             execv(cmds[N][0], cmds[N]);                 /* execute command */
             perror("execv");                            /* coming back here is an error */
             exit(1);                                    /* exit failure */
@@ -269,17 +268,17 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
     
     /* THIS PART DOESN"T WORK YET */
     else {
-        int fdOut[2];                                    /* Create file descriptor */
+        int fdOut[2];                                   /* Create file descriptor */
     
-        pipe(fdOut);                                     /* Create pipe */
-        if ((PID = fork()) == 0) {                       /* Parent Process*/
-            close(fdOut[0]);                             /* Don't need to read from pipe */
-            dup2(FD, STDIN_FILENO);                      /* Replace stdout with the pipe */
+        pipe(fdOut);                                    /* Create pipe */
+        if ((PID = fork()) == 0) {                      /* Parent Process*/
+            close(fdOut[0]);                            /* Don't need to read from pipe */
+            dup2(FD, STDIN_FILENO);                     /* Replace stdout with the pipe */
             dup2(fdOut[1], STDOUT_FILENO);
             execvp(cmds[N][0], cmds[N]);
-        } else if (PID > 0) {                            /* Child Process*/
-            close(fdOut[1]);                             /* Don't need to write to pipe */
-            close(FD);                                   /* Close existing stdout */
+        } else if (PID > 0) {                           /* Child Process*/
+            close(fdOut[1]);                            /* Don't need to write to pipe */
+            close(FD);                                  /* Close existing stdout */
             ExecProgram(cmds, N+1, fdOut[0], BG);
         }
     }
@@ -306,97 +305,91 @@ void InitShell(History *history, int *cursorPos)
 /* **************************************************** */
 
 /* **************************************************** */
-/*                          MAIN                        */
+/*                        MAIN                          */
 /* **************************************************** */
 int main(int argc, char *argv[], char *envp[])
 {
     int cursorPos = 0;
     char keystroke, cmdLine[MAX_BUFFER];
-    unsigned char tryExit = 0;
+    unsigned char tryExit = 0, keepRunning = 1;
 
     History *history = (History*)malloc(sizeof(History));
 
     InitShell(history, &cursorPos);                     /* Initialize the shell */
 
 mainLoop:                                               /* Shell main loop label*/
-    while (1) {
+    while (keepRunning) {
         keystroke = GetChar();
-
-        /* CTRL + D */
-        if (keystroke == CTRL_D)
-            break;
-        
-        /* TAB KEY */
-        else if (keystroke == TAB)
-            ErrorBell();
-        
-        /* BACKSPACE */
-        else if (keystroke == BACKSPACE) {
-            if (cursorPos) {
-                write(STDIN_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
-                cursorPos -= 1;
-            }
-            else
-                ErrorBell();
-            continue;
-        }
-        
-        /* ARROW KEYS */
-        else if (keystroke == ESCAPE) {
-            if (GetChar() == ARROW)
-                switch(GetChar()) {
-                    case UP:
-                        DisplayNextEntry(history, cmdLine, &cursorPos);
-                        break;
-                    case DOWN:
-                        DisplayPrevEntry(history, cmdLine, &cursorPos);
-                        break;
-                    case LEFT:
-                        ErrorBell();
-                        break;
-                    case RIGHT:
-                        ErrorBell();
-                        break;
-                }
-            continue;
-        }
-       
-        /* ENTER KEY */
-        else if (keystroke == RETURN) {
-            cmdLine[cursorPos] = '\0';
-            AddHistory(history, cmdLine, cursorPos);
-            write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
-            if((tryExit = RunCommand(cmdLine)))
+        switch(keystroke) {
+            case CTRL_D:                                /* CTRL + D */
+                keepRunning = 0;
                 break;
-            
-            DisplayPrompt(&cursorPos, 1);
-            continue;
-        }
-        
-        /* ANY OTHER KEY */
-        else {
-            if (cursorPos < MAX_BUFFER) {
-                write(STDIN_FILENO, &keystroke, 1);
-                cmdLine[cursorPos++] = keystroke;
-            } else
+                
+            case TAB:                                   /* TAB KEY */
                 ErrorBell();
-        } 
-    }                                                       /* End Main Loop */
+                break;
+
+            case BACKSPACE:                             /* BACKSPACE */
+                if (cursorPos) {
+                    write(STDIN_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
+                    cursorPos -= 1;
+                }
+                else
+                    ErrorBell();
+                break;
+        
+            case ESCAPE:                                /* ARROW KEYS */
+                if (GetChar() == ARROW)
+                    switch(GetChar()) {
+                        case UP:
+                            DisplayNextEntry(history, cmdLine, &cursorPos);
+                            break;
+                        case DOWN:
+                            DisplayPrevEntry(history, cmdLine, &cursorPos);
+                            break;
+                        case LEFT:
+                            ErrorBell();
+                            break;
+                        case RIGHT:
+                            ErrorBell();
+                            break;
+                    }
+                break;
+       
+            case RETURN:                                /* ENTER KEY */
+                cmdLine[cursorPos] = '\0';
+                AddHistory(history, cmdLine, cursorPos);
+                write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
+                if((tryExit = RunCommand(cmdLine)))
+                    keepRunning = 0;
+            
+                DisplayPrompt(&cursorPos, 1);
+                break;
+        
+            default:                                    /* ANY OTHER KEY */
+                if (cursorPos < MAX_BUFFER) {
+                    write(STDIN_FILENO, &keystroke, 1);
+                    cmdLine[cursorPos++] = keystroke;
+                } else
+                    ErrorBell();
+        }                                               /* End switch statement */
+    }                                                   /* End Main Loop */
     
 
-    if (backgroundCmdRunning) {                             /* If background commands are still running */
-        ThrowError("Error: active jobs still running");     /* Report the error */
-            if(tryExit) {                                   /* If the command was "exit" (as opposed to Ctrl+D) */
-                CompleteCmd("exit", 1, 1);                  /* Print '+ completed' message */
-                tryExit = 0;                                /* Reset the variable */
+    if (backgroundCmdRunning) {                         /* If background commands are still running */
+        ThrowError("Error: active jobs still running"); /* Report the error */
+            if(tryExit) {                               /* If the command was "exit" (as opposed to Ctrl+D) */
+                CompleteCmd("exit", 1, 1);              /* Print '+ completed' message */
+                tryExit = 0;                            /* Reset the variable */
             }
 
-        DisplayPrompt(&cursorPos, 1);                       /* Reprint the prompt */
-        goto mainLoop;                                      /* Re-enter main loop */
+        DisplayPrompt(&cursorPos, 1);                   /* Reprint the prompt */
+        keepRunning = 1;                                /* Set the keep running variable */
+        goto mainLoop;                                  /* Re-enter main loop */
     }
 
     write(STDOUT_FILENO, EXITLINE, strlen(EXITLINE));
-    ResetCanMode();                                         /* Switch back to previous terminal mode */
+    ResetCanMode();                                     /* Switch back to previous terminal mode */
     
     return EXIT_SUCCESS;
 }
