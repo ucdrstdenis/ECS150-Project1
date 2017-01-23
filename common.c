@@ -28,7 +28,7 @@ void ErrorBell(void)
 /* **************************************************** */
 void ThrowError (char *msg)
 {
-    write(STDERR_FILENO, NEWLINE, strlen(NEWLINE));
+    sprintf(msg, "\n%s", msg);
     write(STDERR_FILENO, msg, strlen(msg));
 }                    
 /* **************************************************** */
@@ -38,9 +38,7 @@ void ThrowError (char *msg)
 /* **************************************************** */
 void SayGoodbye (void)
 {
-    write(STDIN_FILENO,  NEWLINE, strlen("\n"));	/* Make sure newline characters don't go in STDOUT */
-    write(STDERR_FILENO, EXITLINE, strlen(EXITLINE));	/* Otherwise you fail the automated testing        */
-    write(STDIN_FILENO, NEWLINE, strlen(NEWLINE));	
+    write(STDERR_FILENO, EXITLINE, strlen(EXITLINE));
 }                    
 /* **************************************************** */
 

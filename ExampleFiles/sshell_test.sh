@@ -54,7 +54,7 @@ mkdir_test(){
 
 # cd and pwd test
 cd_and_pwd_test(){
-  echo -e "mkdir test_d\ncd test_d\npwd\nexit\n" |& ../sshell 1> $OUTFILE 2> $ERRFILE
+  echo -e "mkdir test_d\ncd test_d\npwd\nexit\n" | ../sshell 1> $OUTFILE 2> $ERRFILE
   test_str=$(sed '1q;d' $ERRFILE) 
   test_str2=$(sed '4q;d' $OUTFILE)
 

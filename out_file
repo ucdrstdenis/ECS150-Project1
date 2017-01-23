@@ -1,0 +1,5 @@
+sshell$ mkdir test_d
+
+sshell$ cd test_d
+sshell$ pwd
+/root/Desktop/ECS150-Project1/test_dsshell$ exit

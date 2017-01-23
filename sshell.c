@@ -23,10 +23,7 @@
 void CompleteCmd (char *cmd, char exitCode)
 {
     char msg[MAX_BUFFER + 25];
-    //if (newLn)
-    //    sprintf(msg, "\n+ completed '%s' [%d]", cmd, exitCode);
-    //else
-        sprintf(msg, "+ completed '%s' [%d]", cmd, exitCode);
+    sprintf(msg, "+ completed '%s' [%d]\n", cmd, exitCode);
 
     write(STDERR_FILENO, msg, strlen(msg));
 }
@@ -84,7 +81,7 @@ char *SearchPath(char *prog) {
 char ChangeDir(char *args[])
 {
     if ((args[0] == NULL) || (chdir(args[0]) == -1)) {  /* If no dir specified or chdir() fails */
-        ThrowError("Error: no such directory\n");       /* Print message on STDERR              */
+        ThrowError("Error: no such directory");         /* Print message on STDERR              */
         return 1;                                       /* Return error code 1                  */
     }
     return 0;                                           /* Otherwise return error code 0        */
@@ -98,6 +95,7 @@ char PrintWDir(char *args[])
 {
     char workingDir[MAX_BUFFER];
     getcwd(workingDir, MAX_BUFFER);                     /* Write working directory into workingDir */
+    sprintf(workingDir, "%s\n", workingDir);            /* Add a new line character                 */
     write(STDOUT_FILENO, workingDir, strlen(workingDir));
 
     // @TODO search through args[] and setup output redirect if necesary
@@ -141,17 +139,18 @@ char CheckCommand(char *cmd, char *isBackground)
 char *RemoveWhitespace(char *string)
 {
     unsigned int i = strlen(string);                    /* Length of the string                     */
-    unsigned int iCpy;                                  /* Copy of the original string length       */
+    //unsigned int iCpy;                                  /* Copy of the original string length       */
     unsigned char repeat = 1;				            /* Be sure to repeat the process if needed  */
 
     while ( repeat ) {
-	    iCpy = i;				
+	   // iCpy = i;				
         while (isspace(string[i]))  string[i--] = '\0'; /* Remove trailing whitespace               */
-	    while (!isprint(string[i])) string[i--] = '\0'; /* Remove trailing nonprintable i.e \n\t    */
+	  //  while (!isprint(string[i])) string[i--] = '\0'; /* Remove trailing nonprintable i.e \n\t    */
         while (isspace(*string))  string++;             /* Remove leading whitespace                */
-	    while (!isprint(*string)) string++;             /* Remove trailing nonprintable i.e \n\t    */
-	    if (strlen(string) != iCpy) i = strlen(string); /* If whitespace chars found, update length */
-        else repeat = 0;                                /* Otherwise exit the loop                  */
+	    //while (!isprint(*string)) string++;             /* Remove trailing nonprintable i.e \n\t    */
+	    //if (strlen(string) != iCpy) i = strlen(string); /* If whitespace chars found, update length */
+        //else repeat = 0;                                /* Otherwise exit the loop                  */
+        repeat = 0;    
     }
     
     return string;                                      /* Return updated start address of string   */
@@ -256,7 +255,6 @@ char RunCommand(char *cmdLine)
         CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]));    /* pwd & print + completed message       */
         
     } else {                                             /* Otherwise, try executing the program  */
-        PrintNLOut();                                    /* Print newline character               */
         exitCode = ExecProgram((char ***)Cmds, 0, STDIN_FILENO, *isBackground);
         if(!*isBackground)
             CompleteCmd(cmdCopy, exitCode);
@@ -367,7 +365,7 @@ mainLoop:                                               /* Shell main loop label
             
             case BACKSPACE:                             /* BACKSPACE */
                 if (cursorPos) {
-                    write(STDIN_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
+                    write(STDOUT_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
                     cursorPos -= 1;
                 }
                 else
@@ -394,21 +392,18 @@ mainLoop:                                               /* Shell main loop label
        
             case RETURN:                                /* ENTER KEY */
                 cmdLine[cursorPos] = '\0';
+                write(STDOUT_FILENO, "\n", 1);
                 AddHistory(history, cmdLine, cursorPos);
-                PrintNLIn();
                 /* Check if background commands completed() */
-            
                 if((tryExit = RunCommand(cmdLine)))
                     keepRunning = 0;                    /* Stop the main loop if 'exit' received */
-                else {
-                    PrintNLOut();                              
-                    DisplayPrompt(&cursorPos);
-                }                
+                else                                              
+                    DisplayPrompt(&cursorPos);       
                 break;
         
             default:                                    /* ANY OTHER KEY */
                 if (cursorPos < MAX_BUFFER) {           /* Make sure there's room in the buffer */
-                    write(STDIN_FILENO, &keystroke, 1);
+                    write(STDOUT_FILENO, &keystroke, 1);
                     cmdLine[cursorPos++] = keystroke;
                 } else
                     ErrorBell();
@@ -416,9 +411,7 @@ mainLoop:                                               /* Shell main loop label
     }                                                   /* End Main Loop */
 
     if (numJobsRunning) {                               /* If background commands are still running */ 
-        char msg[MAX_BUFFER];
-        sprintf(msg,"Error: %d active jobs still running",numJobsRunning);     
-        ThrowError(msg);                                /* Report the error */
+        ThrowError("Error: active jobs still running\n");/* Report the error */
             if(tryExit) {                               /* If the command was "exit" (as opposed to Ctrl+D) */
                 PrintNLErr();                           /* Print a newline on STDERR */
                 CompleteCmd("exit", 1);                 /* Print '+ completed' message */

@@ -7,7 +7,7 @@
 const char *SHELL_PROMPT = "sshell$ ";
 const char *BELL = "\a";
 const char *NEWLINE = "\r\n";
-const char *EXITLINE = "Bye...";
+const char *EXITLINE = "Bye...\n";
 const char *BACKSPACE_CHAR = "\b \b";
 /* ************************************ */
 

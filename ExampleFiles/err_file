@@ -1,0 +1,5 @@
+mkdir: cannot create directory ‘test_d’: File exists
++ completed 'mkdir test_d' [1]
++ completed 'cd test_d' [0]
++ completed 'pwd' [0]
+Bye...
