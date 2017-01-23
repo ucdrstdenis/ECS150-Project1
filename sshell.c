@@ -34,10 +34,15 @@ void CompleteCmd (char *cmd, char exitCode)
 /* **************************************************** */
 void ChildSignalHandler(int signum)
 {
-    //char msg[MAX_BUFFER];    
-    //write(STDOUT_FILENO,"SIGCHLD received\n", 17);
-    //waitpid();
-    if (numJobsRunning) numJobsRunning--;               /* Prevent from becomming -1 */
+    //char msg[MAX_BUFFER];
+    pid_t PID;
+    int status;    
+    while ((PID = waitpid(-1, &status, WNOHANG)) > 0) {  /* Allow multiple child processes to terminate if necessary */
+        MarkProcessDone(processList, PID, status);        
+        //sprintf(msg,"PID returned is %d\n",PID);    
+        //write(STDERR_FILENO,msg,strlen(msg));    
+    }
+    if (processList->count) processList->count--;       /* Prevent from becomming -1                                */
 }
 /* **************************************************** */
 
@@ -145,12 +150,12 @@ char *RemoveWhitespace(char *string)
 
     while ( repeat ) {
 	    iCpy = i;				                        /* Keep track of string length              */
-        while (isspace(string[i]))  string[i--] = '\0'; /* Remove trailing whitespace               */
-	    while (string[i] == '\t') string[i--] = '\0';   /* Remove trailing \t                       */
-        while (string[i] == '\n') string[i--] = '\0';   /* Remove trailing \n                       */
-        while (isspace(*string))  string++;             /* Remove leading whitespace                */
-	    while (*string == '\t')   string++;             /* Remove leading \t                        */
-        while (*string == '\n')   string++;             /* Remove leading \n                        */
+        while (isspace(string[i])) string[i--] = '\0';  /* Remove trailing whitespace               */
+	    while (string[i] == '\t')  string[i--] = '\0';  /* Remove trailing \t                       */
+        while (string[i] == '\n')  string[i--] = '\0';  /* Remove trailing \n                       */
+        while (isspace(*string))   string++;            /* Remove leading whitespace                */
+	    while (*string == '\t')    string++;            /* Remove leading \t                        */
+        while (*string == '\n')    string++;            /* Remove leading \n                        */
 	    if (strlen(string) != iCpy) i = strlen(string); /* If whitespace chars found, update length */
         else repeat = 0;                                /* Otherwise exit the loop                  */  
    }
@@ -248,18 +253,87 @@ char RunCommand(char *cmdLine)
     if (!strcmp(Cmds[0][0], "exit"))                     /* 'exit' forces main loop to break      */
         return 1;
 
-    if (!strcmp(Cmds[0][0], "cd")) {                      /* If first command = "cd"               */
+    if (!strcmp(Cmds[0][0], "cd")) {                     /* If first command = "cd"               */
         CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]));    /* CD and print + completed message      */
     }
     else if (!strcmp(Cmds[0][0], "pwd")) {               /* If first command = "pwd"              */
         CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]));    /* pwd & print + completed message       */
         
     } else {                                             /* Otherwise, try executing the program  */
+        if(*isBackground)
+            AddProcess(processList, 0, cmdCopy);         /* Add to list of background processes   */
+
         exitCode = ExecProgram((char ***)Cmds, 0, STDIN_FILENO, *isBackground);
+
         if(!*isBackground)
             CompleteCmd(cmdCopy, exitCode);
     }
     return 0;
+}
+/* **************************************************** */
+
+/* **************************************************** */
+/* Add a process to the list of background processes    */
+/* **************************************************** */
+void AddProcess(BackgroundProcessList *pList, pid_t PID, char *cmd) {
+    Process *p = (Process*) malloc(sizeof(Process));
+    p->cmd = (char*) malloc(strlen(cmd)+1);
+    p->PID = PID;
+    p->status = 0;
+    p->running = 1;
+    strcpy(p->cmd, cmd);
+
+    if (pList->count == 0) {
+        p->next = NULL;
+        p->prev = NULL;
+        pList->top = p;
+    } else {
+        pList->top->prev = p;
+        p->next = pList->top;
+        p->prev = NULL;
+        pList->top = p;
+    }
+    pList->count++;
+}
+/* **************************************************** */
+
+/* **************************************************** */
+/* Check if any processes have completed                */
+/* Print completed message if they have                 */
+/* **************************************************** */
+void CheckCompletedProcesses(BackgroundProcessList *pList) {
+    Process *current = pList->top;
+    while (current != NULL) {
+        if (current->running == 0) {                    /* If process has completed */
+            CompleteCmd(current->cmd, current->status); /* Print completed message */     
+            // @TODO the current node should be freed
+            if ((current->prev == NULL) && (current->next == NULL))    
+                pList->top = NULL;        
+            if (current->prev != NULL)   
+                current->prev->next = current->next;
+            if (current->next != NULL) {            
+                current->next->prev = current->prev;
+                current = current->prev;
+            }    
+        }   
+        current = current->next;  
+    }
+}
+/* **************************************************** */
+
+/* **************************************************** */
+/* Mark process with matching PID as completed          */
+/* **************************************************** */
+void MarkProcessDone(BackgroundProcessList *pList, pid_t PID, int status) {
+    Process *current = pList->top;
+    while(current != NULL) {
+        if (current->PID == PID) {
+            current->running = 0;
+            current->status = status;
+            return;        
+        }
+        current = current->next;
+    }
 }
 /* **************************************************** */
 
@@ -274,9 +348,10 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
     
     if (cmds[N+1] == NULL) {                            /* If there's only 1 command in the array   */
         if ((PID = fork()) != 0) {                      /* Parent Process                           */
-            numJobsRunning++;                           /* Set BackgroundCmd Flag                   */
             if (BG) {                                   /* If it's to be run in background          */
-                waitpid(PID, &status, WNOHANG);         /* Non-blocking call to waitpid             */                
+                waitpid(PID, &status, WNOHANG);         /* Non-blocking call to waitpid             */  
+                processList->top->PID = PID;            /* Set the PID of the last process added    */       
+                processList->top->status = status;      /* Set the status of the last process added */       
             } else                                      /* Otherwise wait for child to exit         */
                 waitpid(PID, &status, 0);               /* Otherwise, wait for child to exit        */
             return status;
@@ -315,6 +390,9 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
 /* **************************************************** */
 void InitShell(History *history, int *cursorPos)
 {
+    /* Initialize the global process list */
+    processList->count = 0;                             /* Number of outstanding processes = 0              */
+    processList->top = NULL;                            /* No outstanding processes yet                     */
     
     /* Initialize history structure */
     history->count = 0;                                 /* Number of history items = 0                      */
@@ -346,8 +424,8 @@ int main(int argc, char *argv[], char *envp[])
     char keystroke, cmdLine[MAX_BUFFER];
     unsigned char tryExit = 0, keepRunning = 1;
 
+    processList = malloc(sizeof(BackgroundProcessList));
     History *history = (History*)malloc(sizeof(History));
-
     InitShell(history, &cursorPos);                     /* Initialize the shell */
 
 mainLoop:                                               /* Shell main loop label */
@@ -394,6 +472,7 @@ mainLoop:                                               /* Shell main loop label
                 cmdLine[cursorPos] = '\0';
                 write(STDOUT_FILENO, "\n", strlen("\n"));
                 AddHistory(history, cmdLine, cursorPos);
+                CheckCompletedProcesses(processList);
                 /* Check if background commands completed() */
                 if((tryExit = RunCommand(cmdLine)))
                     keepRunning = 0;                    /* Stop the main loop if 'exit' received */
@@ -410,7 +489,7 @@ mainLoop:                                               /* Shell main loop label
         }                                               /* End switch statement */
     }                                                   /* End Main Loop */
 
-    if (numJobsRunning) {                               /* If background commands are still running */ 
+    if (processList->count) {                           /* If background commands are still running */ 
         ThrowError("Error: active jobs still running") ;/* Report the error */
             if(tryExit) {                               /* If the command was "exit" (as opposed to Ctrl+D) */
                 CompleteCmd("exit", 1);                 /* Print '+ completed' message */

@@ -59,14 +59,14 @@ void DisplayPrompt(int *cursorPos)
 void ClearCmdLine(char *cmdLine, int *cursorPos)
 {
     while (*cursorPos) {
-        write(STDIN_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
+        write(STDOUT_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
         *cursorPos -= 1;
     }
 }
 /* **************************************************** */
 
 /* **************************************************** */
-/* Print a new line character on STDOUT                 */
+/* Print a new line character on STDOUT, used in debug  */
 /* **************************************************** */
 void PrintNLOut (void)
 {
@@ -75,7 +75,7 @@ void PrintNLOut (void)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Print a new line character on STDERR                 */
+/* Print a new line character on STDERR, used in debug  */
 /* **************************************************** */
 void PrintNLErr (void)
 {
@@ -84,7 +84,7 @@ void PrintNLErr (void)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Print a new line character on STDIN                  */
+/* Print a new line character on STDIN , used in debug  */
 /* **************************************************** */
 void PrintNLIn (void)
 {
