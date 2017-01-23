@@ -34,9 +34,6 @@ void Print2Shell (int fd, char *message, char newline); /* For debugging -Print 
 void ClearCmdLine (char *cmdLine, int *cursorPos);      /* Clear the current cmdLine buffer and STDIN           */
 void DisplayPrompt (int *cursorPos);                    /* Displace the main sshell$ prompt                     */
 void ThrowError (char *message);                        /* Print error message to STDERR                        */
-void PrintNLOut (void);                                 /* Print newline characters on STDOUT                   */
-void PrintNLErr (void);                                 /* Print newline character on STDERR                    */
-void PrintNLIn (void);					/* Print newline characters on STDIN 			*/
 void SayGoodbye (void);                                 /* Prints the exit message                              */
 /* ************************************ */
 

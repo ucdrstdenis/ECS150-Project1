@@ -66,32 +66,6 @@ void ClearCmdLine(char *cmdLine, int *cursorPos)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Print a new line character on STDOUT, used in debug  */
-/* **************************************************** */
-void PrintNLOut (void)
-{
-    write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
-}                    
-/* **************************************************** */
-
-/* **************************************************** */
-/* Print a new line character on STDERR, used in debug  */
-/* **************************************************** */
-void PrintNLErr (void)
-{
-    write(STDERR_FILENO, NEWLINE, strlen(NEWLINE));
-}                    
-/* **************************************************** */
-
-/* **************************************************** */
-/* Print a new line character on STDIN , used in debug  */
-/* **************************************************** */
-void PrintNLIn (void)
-{
-    write(STDIN_FILENO, NEWLINE, strlen(NEWLINE));
-}     
-
-/* **************************************************** */
 /* Print a message to the shell, used in debugging      */
 /* **************************************************** */
 void Print2Shell(int fd, char *message, char newline)
