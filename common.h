@@ -36,6 +36,7 @@ void DisplayPrompt (int *cursorPos);                    /* Displace the main ssh
 void ThrowError (char *message);                        /* Print error message to STDERR                        */
 void PrintNLOut (void);                                 /* Print newline characters on STDOUT                   */
 void PrintNLErr (void);                                 /* Print newline character on STDERR                    */
+void PrintNLIn (void);					/* Print newline characters on STDIN 			*/
 void SayGoodbye (void);                                 /* Prints the exit message                              */
 /* ************************************ */
 

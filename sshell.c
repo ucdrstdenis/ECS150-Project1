@@ -395,6 +395,7 @@ mainLoop:                                               /* Shell main loop label
             case RETURN:                                /* ENTER KEY */
                 cmdLine[cursorPos] = '\0';
                 AddHistory(history, cmdLine, cursorPos);
+                PrintNLIn();
                 /* Check if background commands completed() */
             
                 if((tryExit = RunCommand(cmdLine)))

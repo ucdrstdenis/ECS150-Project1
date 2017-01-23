@@ -38,9 +38,9 @@ void ThrowError (char *msg)
 /* **************************************************** */
 void SayGoodbye (void)
 {
-    write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));	/* Make sure newline characters don't go in STDOUT */
+    write(STDIN_FILENO,  NEWLINE, strlen("\n"));	/* Make sure newline characters don't go in STDOUT */
     write(STDERR_FILENO, EXITLINE, strlen(EXITLINE));	/* Otherwise you fail the automated testing        */
-    write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
+    write(STDIN_FILENO, NEWLINE, strlen(NEWLINE));	
 }                    
 /* **************************************************** */
 
@@ -83,6 +83,14 @@ void PrintNLErr (void)
     write(STDERR_FILENO, NEWLINE, strlen(NEWLINE));
 }                    
 /* **************************************************** */
+
+/* **************************************************** */
+/* Print a new line character on STDIN                  */
+/* **************************************************** */
+void PrintNLIn (void)
+{
+    write(STDIN_FILENO, NEWLINE, strlen(NEWLINE));
+}     
 
 /* **************************************************** */
 /* Print a message to the shell, used in debugging      */
