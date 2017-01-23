@@ -5,7 +5,9 @@
 #include "common.h"
 #include "history.h"
 
-/* Displays next history entry in the command line */
+/* **************************************************** */
+/* Displays next history entry in the command line      */
+/* **************************************************** */
 void DisplayNextEntry(History *history, char *cmdLine, int *cursorPos)
 {
     if (history->count == 0 || history->traversed == MAX_HIST_ITEMS || history->traversed == history->count)
@@ -23,8 +25,11 @@ void DisplayNextEntry(History *history, char *cmdLine, int *cursorPos)
         *cursorPos = strlen(cmdLine);
     }
 }
+/* **************************************************** */
 
-/* Displays previous history entry in the command line */
+/* **************************************************** */
+/* Displays previous history entry in the command line  */
+/* **************************************************** */
 void DisplayPrevEntry(History *history, char *cmdLine, int *cursorPos)
 {	   
     if (history->count == 0 || history->traversed == 0)
@@ -42,8 +47,11 @@ void DisplayPrevEntry(History *history, char *cmdLine, int *cursorPos)
         }
     }
 }
+/* **************************************************** */
 
-/* Removes the entry at the bottom of the history list */
+/* **************************************************** */
+/* Removes the entry at the bottom of the history list  */
+/* **************************************************** */
 void RemoveLastEntry(History *history)
 {
     Entry *current = history->top;
@@ -55,8 +63,11 @@ void RemoveLastEntry(History *history)
     free(current);
     previous->next = NULL;
 }
+/* **************************************************** */
 
-/* Adds a new entry to the history list */
+/* **************************************************** */
+/* Adds a new entry to the history list                 */
+/* **************************************************** */
 void AddHistory(History *history, char *cmdLine, int cmdLen)
 {
     Entry *h = (Entry*) malloc(sizeof(Entry));
@@ -82,4 +93,4 @@ void AddHistory(History *history, char *cmdLine, int cmdLen)
     history->current = NULL;
     history->traversed = 0;
 }
-/* ************************************ */
+/* **************************************************** */

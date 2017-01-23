@@ -2,7 +2,7 @@
 #define _HISTORY_H
 
 /* ************************************ */
-/*              History                 */
+/*          History Structures          */
 /* ************************************ */
 typedef struct Entry {                  /* History Entry item        */
     char *command;                      /* command to save           */
@@ -17,6 +17,9 @@ typedef struct History {
     Entry *current;                     /* Entry currently being viewed via. up/down arrows */
 } History;
 
+/* ************************************ */
+/*          History Functions           */
+/* ************************************ */
 void AddHistory(History *history, char *cmdLine, int cmdLen); 	        /* Adds a new entry to the history list                */
 void DisplayNextEntry(History *history, char *cmdLine, int *cursorPos); /* Displays next history entry in the command line     */
 void DisplayPrevEntry(History *history, char *cmdLine, int *cursorPos); /* Displays previous history entry in the command line */
