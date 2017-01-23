@@ -1,6 +1,9 @@
 # OS X Hidden Files
 *.DS_Store
 
+# Binary name
+sshell
+
 # Object files
 *.o
 *.ko

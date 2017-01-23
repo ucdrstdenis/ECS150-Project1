@@ -8,10 +8,11 @@
 #include <string.h>
 #include <sys/wait.h>
 
-#include "common.h"
-#include "history.h"
-#include "noncanmode.h"
-#include "sshell.h"
+/* User defined .h files */
+#include "common.h"                                     /* Contains keystrokes and common functions                 */
+#include "history.h"                                    /* Contains history structure and history-related functions */
+#include "noncanmode.h"                                 /* Slightly modified version of the file provided by Joel   */
+#include "sshell.h"                                     /* Contains function prototypes for sshell.c functions      */
 
 /* **************************************************** */
 /* Prints '+ completed' messages to STDOUT              */
@@ -67,9 +68,11 @@ char *SearchPath(char *prog) {
         binary = prog;
 
     return binary;
-} 
+}
 /* **************************************************** */
-/* Change Directory Command                             */
+
+/* **************************************************** */
+/* Change Directory Command  (handles cd)               */
 /* **************************************************** */
 char ChangeDir(char *args[])
 {
@@ -90,7 +93,7 @@ char PrintWDir(char *args[])
     getcwd(workingDir, MAX_BUFFER);                     /* Write working directory into workingDir */
     write(STDOUT_FILENO, workingDir, strlen(workingDir));
 
-    // @TODO search through argsp[] and setup output redirect if necesary
+    // @TODO search through args[] and setup output redirect if necesary
 
     return 0;
 }
@@ -164,14 +167,15 @@ char **Cmd2Array(char *cmd)
         args[i] = (char *)malloc(strlen(cmd)+1);        /* Allocate space for the remaining portion of cmd      */
         args[i++] = cmd;
     }
-    args[i] = (char *) malloc(sizeof(char*));           /* Allocate space for the NULL character                */
+    args[i] = (char *) malloc(sizeof(char*));           /* Allocate space for the NULL character (Not needed?)  */
     args[i] = NULL;
     return args;
 }
 /* **************************************************** */
 
 /* **************************************************** */
-/* Breaks up  a command into a double array of cmds     */
+/* Breaks up  a command into dynamically allocated      */
+/* 2D array of pointers to commands                     */
 /*                     Example  1                       */
 /* "ls -la|grep filename" -> {args0, args1, NULL}       */
 /* where args0 = {"ls", "-la", NULL}                    */
@@ -259,7 +263,6 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
             
         } else {                                        /* Child */
             cmds[N][0] = SearchPath(cmds[N][0]);        /* Replace with full PATH to binary name */
-            //if (cmds[N][0] == NULL)                     /* If the binary can't be found in the PATH */
             execv(cmds[N][0], cmds[N]);                 /* execute command */
             perror("execv");                            /* coming back here is an error */
             exit(1);                                    /* exit failure */
@@ -317,10 +320,11 @@ int main(int argc, char *argv[], char *envp[])
 
     InitShell(history, &cursorPos);                     /* Initialize the shell */
 
-mainLoop:                                               /* Shell main loop label*/
-    while (keepRunning) {
+mainLoop:                                               /* Shell main loop label */
+    while (keepRunning) {                               /* Main Loop */
         keystroke = GetChar();
-        switch(keystroke) {
+        
+        switch(keystroke) {                             /* Process the keytroke */
             case CTRL_D:                                /* CTRL + D */
                 keepRunning = 0;
                 break;
@@ -360,6 +364,7 @@ mainLoop:                                               /* Shell main loop label
                 cmdLine[cursorPos] = '\0';
                 AddHistory(history, cmdLine, cursorPos);
                 write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
+                
                 if((tryExit = RunCommand(cmdLine)))
                     keepRunning = 0;
             
@@ -367,14 +372,13 @@ mainLoop:                                               /* Shell main loop label
                 break;
         
             default:                                    /* ANY OTHER KEY */
-                if (cursorPos < MAX_BUFFER) {
+                if (cursorPos < MAX_BUFFER) {           /* Make sure there's room in the buffer */
                     write(STDIN_FILENO, &keystroke, 1);
                     cmdLine[cursorPos++] = keystroke;
                 } else
                     ErrorBell();
         }                                               /* End switch statement */
     }                                                   /* End Main Loop */
-    
 
     if (backgroundCmdRunning) {                         /* If background commands are still running */
         ThrowError("Error: active jobs still running"); /* Report the error */
@@ -384,11 +388,11 @@ mainLoop:                                               /* Shell main loop label
             }
 
         DisplayPrompt(&cursorPos, 1);                   /* Reprint the prompt */
-        keepRunning = 1;                                /* Set the keep running variable */
+        keepRunning = 1;                                /* Set the while loop to continue running */
         goto mainLoop;                                  /* Re-enter main loop */
     }
 
-    write(STDOUT_FILENO, EXITLINE, strlen(EXITLINE));
+    write(STDOUT_FILENO, EXITLINE, strlen(EXITLINE));   /* Write an exit message */
     ResetCanMode();                                     /* Switch back to previous terminal mode */
     
     return EXIT_SUCCESS;
