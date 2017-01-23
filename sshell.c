@@ -47,7 +47,8 @@ void ThrowError (char *msg)
 /* **************************************************** */
 void ChildSignalHandler(int signum)
 {
-    
+        //waitpid();
+        //numBackgroundProcesses--;
 }
 /* **************************************************** */
 
@@ -273,13 +274,13 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                 backgroundCmdRunning = 1;               /* Set BackgroundCmd Flag                   */
                 return status;                          /* Don't wait for process to return         */
             }
-            waitpid(-1, &status, 0);                    /* Wait for child to exit                   */
+            waitpid(PID, &status, 0);                   /* Wait for child to exit                   */
             return status;
         } else {                                        /* Child Process                            */
             cmds[N][0] = SearchPath(cmds[N][0]);        /* Replace with full PATH to binary name    */
             execv(cmds[N][0], cmds[N]);                 /* Execute command                          */
             perror("execv");                            /* Coming back here is an error             */
-            exit(1);                                    /* Exit failure                             */
+            exit(EXIT_FAILURE);                         /* Exit failure                             */
         }
     }
     
