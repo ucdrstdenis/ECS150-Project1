@@ -89,3 +89,15 @@ void Print2Shell(int fd, char *message, char newline)
 
 }
 /* **************************************************** */
+
+/* **************************************************** */
+/* Prints '+ completed' messages to STDERR              */
+/* **************************************************** */
+void CompleteCmd (char *cmd, char exitCode)
+{
+    char msg[MAX_BUFFER + 25];
+    sprintf(msg, "+ completed '%s' [%d]\n", cmd, exitCode);
+
+    write(STDERR_FILENO, msg, strlen(msg));
+}
+/* **************************************************** */

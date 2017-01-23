@@ -1,7 +1,7 @@
 CC      = gcc
 CFLAGS 	= -m64 -Wall -Werror
-HEADERS = noncanmode.h common.h history.h sshell.h
-SOURCES = noncanmode.c common.c history.c sshell.c
+HEADERS = noncanmode.h common.h history.h process.h sshell.h
+SOURCES = noncanmode.c common.c history.c process.c sshell.c
 OBJECTS = $(SOURCES:.c=.o)
 TARGET  = sshell
 

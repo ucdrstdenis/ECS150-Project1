@@ -35,6 +35,7 @@ void ClearCmdLine (char *cmdLine, int *cursorPos);      /* Clear the current cmd
 void DisplayPrompt (int *cursorPos);                    /* Displace the main sshell$ prompt                     */
 void ThrowError (char *message);                        /* Print error message to STDERR                        */
 void SayGoodbye (void);                                 /* Prints the exit message                              */
+void CompleteCmd (char *cmd, char exitCode);            /* Prints + completed messages to STDOUT                */
 /* ************************************ */
 
 #endif
