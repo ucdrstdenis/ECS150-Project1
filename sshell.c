@@ -34,15 +34,12 @@ void CompleteCmd (char *cmd, char exitCode)
 /* **************************************************** */
 void ChildSignalHandler(int signum)
 {
-    //char msg[MAX_BUFFER];
     pid_t PID;
     int status;    
     while ((PID = waitpid(-1, &status, WNOHANG)) > 0) {  /* Allow multiple child processes to terminate if necessary */
-        MarkProcessDone(processList, PID, status);        
-        //sprintf(msg,"PID returned is %d\n",PID);    
-        //write(STDERR_FILENO,msg,strlen(msg));    
+        MarkProcessDone(processList, PID, status);
     }
-    if (processList->count) processList->count--;       /* Prevent from becomming -1                                */
+    if (processList->count) processList->count--;       /* Prevent from becomming -1 */
 }
 /* **************************************************** */
 
