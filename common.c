@@ -24,13 +24,31 @@ void ErrorBell(void)
 /* **************************************************** */
 
 /* **************************************************** */
+/* Print error message to STDERR                        */
+/* **************************************************** */
+void ThrowError (char *msg)
+{
+    write(STDERR_FILENO, NEWLINE, strlen(NEWLINE));
+    write(STDERR_FILENO, msg, strlen(msg));
+}                    
+/* **************************************************** */
+
+/* **************************************************** */
+/* Prints the exit message                              */
+/* **************************************************** */
+void SayGoodbye (void)
+{
+    write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));	/* Make sure newline characters don't go in STDOUT */
+    write(STDERR_FILENO, EXITLINE, strlen(EXITLINE));	/* Otherwise you fail the automated testing        */
+    write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
+}                    
+/* **************************************************** */
+
+/* **************************************************** */
 /* Displace the main sshell$ prompt                     */
 /* **************************************************** */
-void DisplayPrompt(int *cursorPos, char newline)
+void DisplayPrompt(int *cursorPos)
 {
-    if (newline)
-        write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
-    
     write(STDOUT_FILENO, SHELL_PROMPT, strlen(SHELL_PROMPT));
     *cursorPos = 0;
 }
@@ -46,6 +64,24 @@ void ClearCmdLine(char *cmdLine, int *cursorPos)
         *cursorPos -= 1;
     }
 }
+/* **************************************************** */
+
+/* **************************************************** */
+/* Print a new line character on STDOUT                 */
+/* **************************************************** */
+void PrintNLOut (void)
+{
+    write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
+}                    
+/* **************************************************** */
+
+/* **************************************************** */
+/* Print a new line character on STDERR                 */
+/* **************************************************** */
+void PrintNLErr (void)
+{
+    write(STDERR_FILENO, NEWLINE, strlen(NEWLINE));
+}                    
 /* **************************************************** */
 
 /* **************************************************** */

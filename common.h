@@ -29,10 +29,14 @@
 /* ************************************ */
 /*               Common                 */
 /* ************************************ */
-void ErrorBell(void);                                    /* Sound Bell noise                                     */
-void Print2Shell (int fd, char *message, char newline);  /* For debugging -Print message on STDOUT               */
-void ClearCmdLine (char *cmdLine, int *cursorPos);       /* Clear the current cmdLine buffer and STDIN           */
-void DisplayPrompt (int *cursorPos, char newline);       /* Displace the main sshell$ prompt                     */
+void ErrorBell(void);                                   /* Sound Bell noise                                     */
+void Print2Shell (int fd, char *message, char newline); /* For debugging -Print message on STDOUT               */
+void ClearCmdLine (char *cmdLine, int *cursorPos);      /* Clear the current cmdLine buffer and STDIN           */
+void DisplayPrompt (int *cursorPos);                    /* Displace the main sshell$ prompt                     */
+void ThrowError (char *message);                        /* Print error message to STDERR                        */
+void PrintNLOut (void);                                 /* Print newline characters on STDOUT                   */
+void PrintNLErr (void);                                 /* Print newline character on STDERR                    */
+void SayGoodbye (void);                                 /* Prints the exit message                              */
 /* ************************************ */
 
 #endif
