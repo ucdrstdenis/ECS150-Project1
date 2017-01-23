@@ -8,14 +8,17 @@
 #include <string.h>
 #include <sys/wait.h>
 
-/* User defined .h files */
-#include "common.h"                                     /* Contains keystrokes and common functions                 */
-#include "history.h"                                    /* Contains history structure and history-related functions */
-#include "noncanmode.h"                                 /* Slightly modified version of the file provided by Joel   */
-#include "sshell.h"                                     /* Contains function prototypes for sshell.c functions      */
+/* **************************************************** */
+/*              User - defined .h files                 */
+/* **************************************************** */
+#include "common.h"                                     /* Keystrokes and common functions                */
+#include "history.h"                                    /* History structures and related functions       */
+#include "noncanmode.h"                                 /* Modified  version of the file provided by Joel */
+#include "sshell.h"                                     /* Function prototypes for sshell.c functions     */
+/* **************************************************** */
 
 /* **************************************************** */
-/* Prints '+ completed' messages to STDOUT              */
+/* Prints '+ completed' messages to STDERR              */
 /* **************************************************** */
 void CompleteCmd (char *cmd, char exitCode, char newLn)
 {
@@ -42,6 +45,8 @@ void ThrowError (char *msg)
 /* **************************************************** */
 /* Searches the PATH variable for the location of       */
 /* the specified program                                */
+/* Uses the first entry in PATH that has valid entry    */
+/*                                                      */
 /* Example - *PATH = /usr/bin:/opt/bin                  */
 /*           *prog = "ls"                               */
 /*           returns "/usr/bin/ls"                      */
@@ -61,13 +66,13 @@ char *SearchPath(char *prog) {
         semi = strchr(PATH, ':');                       /* semi points to the next place ':' occurs    */
     }
     
-    sprintf(binary, "%s/%s", PATH, prog);               /* Append binary to first path                 */
+    sprintf(binary, "%s/%s", PATH, prog);               /* Append binary to last entry in path         */
     if(access(binary, F_OK) != -1)                      /* If binary exists                            */
         return binary;
     else                                                /* If it doesn't exists                        */
-        binary = prog;
+        binary = prog;                                  /* Just store the argument that was passed     */
 
-    return binary;
+    return binary;                                      /* Return the binary name                      */
 }
 /* **************************************************** */
 
@@ -133,12 +138,12 @@ char CheckCommand(char *cmd, char *isBackground)
 /* **************************************************** */
 char *RemoveWhitespace(char *string)
 {
-    unsigned int i = strlen(string);                    /* Length of the string       */
+    unsigned int i = strlen(string);                    /* Length of the string                     */
     
-    while (isspace(string[i])) string[i--] = '\0';      /* Remove trailing whitespace */
-    while (isspace(*string)) string++;                  /* Remove leading whitespace  */
+    while (isspace(string[i])) string[i--] = '\0';      /* Remove trailing whitespace               */
+    while (isspace(*string)) string++;                  /* Remove leading whitespace                */
 
-    return string;                                      /* Return updated start address of string */
+    return string;                                      /* Return updated start address of string   */
 }
 /* **************************************************** */
 
@@ -230,12 +235,12 @@ char RunCommand(char *cmdLine)
         return 1;
     
     if (!strcmp(Cmds[0][0], "cd"))                       /* If first command = "cd"               */
-        CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]), 0); /* CD and print +completed message       */
+        CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]), 0); /* CD and print + completed message      */
 
-    else if (!strcmp(Cmds[0][0], "pwd")) {               /* first command = "pwd"                 */
-        CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]), 1); /* pwd print +completed message          */
+    else if (!strcmp(Cmds[0][0], "pwd")) {               /* If first command = "pwd"              */
+        CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]), 1); /* pwd & print + completed message       */
         
-    } else {
+    } else {                                             /* Otherwise, try executing the program  */
         exitCode = ExecProgram((char ***)Cmds, 0, STDIN_FILENO, *isBackground);
         CompleteCmd(cmdCopy, exitCode, 0);
     }
@@ -249,39 +254,39 @@ char RunCommand(char *cmdLine)
 /* **************************************************** */
 int ExecProgram(char **cmds[], int N, int FD, char BG)
 {
-    int status = 0;                                     /* Holds status */
-    pid_t PID;                                          /* Holds the PID */
+    int status = 0;                                     /* Holds status                             */
+    pid_t PID;                                          /* Holds the PID                            */
     
-    if (cmds[N+1] == NULL) {                            /* If there's only 1 command */
-        if ((PID = fork()) != 0) {                      /* Parent */
-            if (BG) {                                   /* If it's to be run in background */
-                backgroundCmdRunning = 1;               /* SetBackgroundCmd Flag   */
-                return status;                          /* Don't wait for prcess to return  */
+    if (cmds[N+1] == NULL) {                            /* If there's only 1 command                */
+        if ((PID = fork()) != 0) {                      /* Parent Process                           */
+            if (BG) {                                   /* If it's to be run in background          */
+                backgroundCmdRunning = 1;               /* Set BackgroundCmd Flag                   */
+                return status;                          /* Don't wait for process to return         */
             }
-            waitpid(-1, &status, 0);                    /* wait for child to exit */
+            waitpid(-1, &status, 0);                    /* Wait for child to exit                   */
             return status;
-            
-        } else {                                        /* Child */
-            cmds[N][0] = SearchPath(cmds[N][0]);        /* Replace with full PATH to binary name */
-            execv(cmds[N][0], cmds[N]);                 /* execute command */
-            perror("execv");                            /* coming back here is an error */
-            exit(1);                                    /* exit failure */
+        } else {                                        /* Child Process                            */
+            cmds[N][0] = SearchPath(cmds[N][0]);        /* Replace with full PATH to binary name    */
+            execv(cmds[N][0], cmds[N]);                 /* Execute command                          */
+            perror("execv");                            /* Coming back here is an error             */
+            exit(1);                                    /* Exit failure                             */
         }
     }
     
     /* THIS PART DOESN"T WORK YET */
     else {
-        int fdOut[2];                                   /* Create file descriptor */
+        int fdOut[2];                                   /* Create file descriptor                   */
     
-        pipe(fdOut);                                    /* Create pipe */
-        if ((PID = fork()) == 0) {                      /* Parent Process*/
-            close(fdOut[0]);                            /* Don't need to read from pipe */
-            dup2(FD, STDIN_FILENO);                     /* Replace stdout with the pipe */
-            dup2(fdOut[1], STDOUT_FILENO);
+        pipe(fdOut);                                    /* Create pipe                              */
+        if ((PID = fork()) == 0) {                      /* Child Process                            */
+            close(fdOut[0]);                            /* Don't need to read from pipe             */
+            dup2(FD, STDIN_FILENO);                     /* Link Input file descriptor to the pipe   */
+            dup2(fdOut[1], STDOUT_FILENO);              /* Link output file descripter to STDOUT    */
             execvp(cmds[N][0], cmds[N]);
-        } else if (PID > 0) {                           /* Child Process*/
-            close(fdOut[1]);                            /* Don't need to write to pipe */
-            close(FD);                                  /* Close existing stdout */
+            
+        } else if (PID > 0) {                           /* Parent Process                           */
+            close(fdOut[1]);                            /* Don't need to write to pipe              */
+            close(FD);                                  /* Close existing stdout                    */
             ExecProgram(cmds, N+1, fdOut[0], BG);
         }
     }
@@ -295,7 +300,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
 /* **************************************************** */
 void InitShell(History *history, int *cursorPos)
 {
-    /* Initialize history */
+    /* Initialize history structure */
     history->count = 0;
     history->traversed = 0;
     history->top = NULL;
@@ -328,11 +333,12 @@ mainLoop:                                               /* Shell main loop label
             case CTRL_D:                                /* CTRL + D */
                 keepRunning = 0;
                 break;
-                
+           
             case TAB:                                   /* TAB KEY */
                 ErrorBell();
                 break;
-
+            
+            
             case BACKSPACE:                             /* BACKSPACE */
                 if (cursorPos) {
                     write(STDIN_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
@@ -341,7 +347,8 @@ mainLoop:                                               /* Shell main loop label
                 else
                     ErrorBell();
                 break;
-        
+            
+            
             case ESCAPE:                                /* ARROW KEYS */
                 if (GetChar() == ARROW)
                     switch(GetChar()) {
@@ -359,6 +366,7 @@ mainLoop:                                               /* Shell main loop label
                             break;
                     }
                 break;
+                
        
             case RETURN:                                /* ENTER KEY */
                 cmdLine[cursorPos] = '\0';
@@ -366,11 +374,12 @@ mainLoop:                                               /* Shell main loop label
                 write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
                 
                 if((tryExit = RunCommand(cmdLine)))
-                    keepRunning = 0;
+                    keepRunning = 0;                    /* Stop the main loop if 'exit' received */
             
                 DisplayPrompt(&cursorPos, 1);
                 break;
         
+                
             default:                                    /* ANY OTHER KEY */
                 if (cursorPos < MAX_BUFFER) {           /* Make sure there's room in the buffer */
                     write(STDIN_FILENO, &keystroke, 1);
