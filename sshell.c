@@ -36,7 +36,7 @@ void ChildSignalHandler(int signum)
 {
     pid_t PID;
     int status;    
-    while ((PID = waitpid(-1, &status, WNOHANG)) > 0) {  /* Allow multiple child processes to terminate if necessary */
+    while ((PID = waitpid(-1, &status, WNOHANG)) > 0) { /* Allow multiple child processes to terminate if necessary */
         MarkProcessDone(processList, PID, status);
     }
     if (processList->count) processList->count--;       /* Prevent from becomming -1 */
@@ -140,13 +140,13 @@ char CheckCommand(char *cmd, char *isBackground)
 /* **************************************************** */
 char *RemoveWhitespace(char *string)
 {
-    unsigned char repeat = 1;				            /* Be sure to repeat the process if needed  */
+    unsigned char repeat = 1;                           /* Be sure to repeat the process if needed  */
     unsigned int i = strlen(string);                    /* Length of the string                     */
     unsigned int iCpy;                                  /* Copy of the original string length       */
 
 
     while ( repeat ) {
-	    iCpy = i;				                        /* Keep track of string length              */
+	    iCpy = i;                                       /* Keep track of string length              */
         while (isspace(string[i])) string[i--] = '\0';  /* Remove trailing whitespace               */
 	    while (string[i] == '\t')  string[i--] = '\0';  /* Remove trailing \t                       */
         while (string[i] == '\n')  string[i--] = '\0';  /* Remove trailing \n                       */
@@ -220,7 +220,6 @@ char ***Pipes2Arrays(char *cmd){
     if (*cmd != '\0')                                   /* If there are still characters in cmd                 */
         pipes[i++] = Cmd2Array(cmd);                    /* Add them to the array                                */
          
-    
     pipes[i] = NULL;					                /* Set the last entry to be NULL                        */
     return pipes;                                       /* Return the pointer                                   */
 }
@@ -303,12 +302,12 @@ void CheckCompletedProcesses(BackgroundProcessList *pList) {
     while (current != NULL) {
         if (current->running == 0) {                    /* If process has completed */
             CompleteCmd(current->cmd, current->status); /* Print completed message */     
-            // @TODO the current node should be freed
+            // @TODO the current node should be freed at some point
             if ((current->prev == NULL) && (current->next == NULL))    
                 pList->top = NULL;        
             if (current->prev != NULL)   
                 current->prev->next = current->next;
-            if (current->next != NULL) {            
+            if (current->next != NULL) {                /* Then remove the node  from the list */
                 current->next->prev = current->prev;
                 current = current->prev;
             }    
@@ -322,9 +321,9 @@ void CheckCompletedProcesses(BackgroundProcessList *pList) {
 /* Mark process with matching PID as completed          */
 /* **************************************************** */
 void MarkProcessDone(BackgroundProcessList *pList, pid_t PID, int status) {
-    Process *current = pList->top;
-    while(current != NULL) {
-        if (current->PID == PID) {
+    Process *current = pList->top;                      
+    while(current != NULL) {                            /* Iterate through the process list */
+        if (current->PID == PID) {                      /* Check to find the PID = completed PID */
             current->running = 0;
             current->status = status;
             return;        
@@ -360,7 +359,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
             exit(EXIT_FAILURE);                         /* Exit failure                             */
         }
     }
-    
+
     /* THIS PART DOESN"T WORK YET */
     else {
         int fdOut[2];                                   /* Create file descriptor                   */
@@ -464,12 +463,13 @@ mainLoop:                                               /* Shell main loop label
                             break;
                     }
                 break;
-       
+
             case RETURN:                                /* ENTER KEY */
                 cmdLine[cursorPos] = '\0';
                 write(STDOUT_FILENO, "\n", strlen("\n"));
                 AddHistory(history, cmdLine, cursorPos);
                 CheckCompletedProcesses(processList);
+
                 /* Check if background commands completed() */
                 if((tryExit = RunCommand(cmdLine)))
                     keepRunning = 0;                    /* Stop the main loop if 'exit' received */
@@ -503,4 +503,4 @@ mainLoop:                                               /* Shell main loop label
     
     return EXIT_SUCCESS;
 }
-/* ************************************ */
+/* **************************************************** */
