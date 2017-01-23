@@ -5,8 +5,8 @@
 sshell
 
 # Files created during testing
-sshell_test_dir/
-test_d/
+sshell_test_dir
+test_d
 err_file
 out_file
 
