@@ -1,7 +1,7 @@
-# ECS150-Project1
+# ECS150-Project1 #
 A simple shell written in c
 
-## Header Files
+## Header Files ##
 1. common.h - 
 2. history.h -
 3. noncanmode.h - 
