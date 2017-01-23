@@ -43,6 +43,15 @@ void ThrowError (char *msg)
 /* **************************************************** */
 
 /* **************************************************** */
+/* Interrupt / Signal handler for SIGCHDL               */
+/* **************************************************** */
+void ChildSignalHandler(int signum)
+{
+    
+}
+/* **************************************************** */
+
+/* **************************************************** */
 /* Searches the PATH variable for the location of       */
 /* the specified program                                */
 /* Uses the first entry in PATH that has valid entry    */
@@ -300,15 +309,25 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
 /* **************************************************** */
 void InitShell(History *history, int *cursorPos)
 {
-    /* Initialize history structure */
-    history->count = 0;                                 /* Number of history items = 0 */
-    history->traversed = 0;                             /* Traversed history items = 0 */
-    history->top = NULL;                                /* No history entries yet      */
-    history->current = NULL;                            /* Not currently viewing any entry */
     
-    SetNonCanMode();                                    /* Switch to non-canonical terminal mode */
+    /* Initialize history structure */
+    history->count = 0;                                 /* Number of history items = 0                      */
+    history->traversed = 0;                             /* Traversed history items = 0                      */
+    history->top = NULL;                                /* No history entries yet                           */
+    history->current = NULL;                            /* Not currently viewing any entry                  */
+    
+    /* Setup SIGCHLD interrupt handler */
+    struct sigaction act;                               /* Sigaction struct for signal handlers             */
+    act.sa_handler = ChildSignalHandler;                /* Setup interrupt handler                          */
+    
+    if (sigaction(SIGCHLD, &act, NULL)) {               /* Call sigaction, check for error                  */
+        perror("sigaction");                            /* If theres an error, throw it                     */
+        exit(1);                                        /* Terminate the program                            */
+    }
+    
+    SetNonCanMode();                                    /* Switch to non-canonical terminal mode            */
     /* PrintWelcomeMessage() */                         // @TODO
-    DisplayPrompt(cursorPos, 0);                        /* Print the prompt and clear the cursor position */
+    DisplayPrompt(cursorPos, 0);                        /* Print the prompt and clear the cursor position   */
 }
 /* **************************************************** */
 
