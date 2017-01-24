@@ -9,16 +9,20 @@
 /* **************************************************** */
 
 /* **************************************************** */
-/* Add a process to the list of background processes    */
+/* Add a process to the list of running processes       */
 /* **************************************************** */
-void AddProcess(ProcessList *pList, pid_t PID, char *cmd) {
+Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char isBG, int fdIn)
+{
     Process *proc = (Process*) malloc(sizeof(Process));
-    proc->cmd = (char*) malloc(strlen(cmd)+1);
-    proc->PID = PID;
-    proc->status = 0;
+    proc->cmd     = (char*) malloc(strlen(cmd)+1);
+    proc->PID     = PID;
+    proc->status  = 0;
     proc->running = 1;
+    proc->isBG    = isBG;
+    proc->fdIn    = fdIn;
+    proc->child   = NULL;
     strcpy(proc->cmd, cmd);
-
+    
     if (pList->count == 0) {
         proc->next = NULL;
         pList->top = proc;
@@ -27,6 +31,24 @@ void AddProcess(ProcessList *pList, pid_t PID, char *cmd) {
         pList->top = proc;
     }
     pList->count++;                                     /* Increment the count of processes in the list */
+    return pList->top;
+}
+/* **************************************************** */
+
+/* **************************************************** */
+/* Add a process as a child of another processs         */
+/* **************************************************** */
+void AddProcessAsChild(ProcessList *pList, pid_t pPID, pid_t cPID, char *cmd, char isBG, int fdIn)
+{
+    Process *child = (Process*) AddProcess(pList, cPID, cmd, isBG, fdIn);
+    Process *parent = pList->top;
+    while (parent != NULL) {
+        if (parent->PID == pPID) {
+            parent->child = child;
+            return;
+        }
+        parent = parent->next;
+    }
 }
 /* **************************************************** */
 
@@ -34,9 +56,11 @@ void AddProcess(ProcessList *pList, pid_t PID, char *cmd) {
 /* Check if any processes have completed                */
 /* Print completed message if they have                 */
 /* **************************************************** */
-void CheckCompletedProcesses(ProcessList *pList) {
+void CheckCompletedProcesses(ProcessList *pList)
+{
     Process *current = pList->top;
     Process *previous = NULL;
+    
     while (current != NULL) {                           /* Iterate through the list 	*/
         if (current->running == 0) {                    /* If process has completed 	*/
             CompleteCmd(current->cmd, current->status); /* Print completed message 	    */
@@ -58,7 +82,8 @@ void CheckCompletedProcesses(ProcessList *pList) {
 /* Mark process with matching PID as completed          */
 /* return 1 if matching PID in list, 0 otherwise        */
 /* **************************************************** */
-char MarkProcessDone(ProcessList *pList, pid_t PID, int status) {
+char MarkProcessDone(ProcessList *pList, pid_t PID, int status)
+{
     Process *current = pList->top;                      
     while(current != NULL) {                            /* Iterate through the process list */
         if (current->PID == PID) {                      /* Check to find the PID = completed PID */

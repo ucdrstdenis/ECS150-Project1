@@ -1,6 +1,7 @@
 #ifndef _SSHELL_H
 #define _SSHELL_H
 
+#include "process.h"                                    /* Functions for tracking background processes          */
 #define xStat(status) WEXITSTATUS(status)
 
 /* **************************************************** */
@@ -12,7 +13,7 @@ char ChangeDir(char *args[]);                           /* Handles 'cd' commands
 char PrintWDir(char *args[]);                           /* Handles 'pwd' commands                               */
 char RunCommand (char *cmdLine);                    	/* Wrapper to execute whatever is on the command line   */
 char CheckCommand(char *cmd, char *isBackground);   	/* Check for invalid placement of special characters    */
-int  ExecProgram(char **cmds[], int N, int FD, char BG);/* Execute program commands, recursive if piped       	*/
+int  ExecProgram(char **cmds[], int N, Process *P);     /* Execute program commands, recursive if piped       	*/
 char **Cmd2Array (char *cmd);                       	/* Breaks up  a command into an array of arguments      */
 char ***Pipes2Array (char *cmd);                    	/* Breaks up command into arrays of piped arguments     */
 /* **************************************************** */

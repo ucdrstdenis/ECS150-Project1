@@ -15,7 +15,6 @@
 #include "history.h"                                    /* History structures and related functions       */
 #include "noncanmode.h"                                 /* Modified version of the file provided by Joel  */
 #include "sshell.h"                                     /* Function prototypes for sshell.c functions     */
-#include "process.h"                                    /* Functions for tracking background processes    */
 /* **************************************************** */
 
 /* **************************************************** */
@@ -26,7 +25,7 @@ void ChildSignalHandler(int signum)
     pid_t PID;
     int status = 0;
     while ((PID = waitpid(-1, &status, WNOHANG)) > 0)    /* Allow multiple child processes to terminate if necessary */
-        MarkProcessDone(processList, PID, xStat(status));/* Mark the process as completed                     */
+        MarkProcessDone(processList, PID, xStat(status));/* Mark the process as completed                            */
 }
 /* **************************************************** */
 
@@ -35,6 +34,7 @@ void ChildSignalHandler(int signum)
 /* the specified program                                */
 /* Uses the first entry in PATH that has valid entry    */
 /*                                                      */
+/* NOT NEEDED IF EXECVP USED                            */
 /* Example - *PATH = /usr/bin:/opt/bin                  */
 /*           *prog = "ls"                               */
 /*           returns "/usr/bin/ls"                      */
@@ -193,14 +193,14 @@ char ***Pipes2Arrays(char *cmd)
 char RunCommand(char *cmdLine)
 {
     char ***Cmds = (char ***) malloc(MAX_TOKENS * sizeof(char**));
-    char *isBackground = (char*) malloc(sizeof(char*));  /* Flag for background commands          */
-    
+    char isBg = 0;                                       /* Flag for background commands          */
     char *cmdCopy = (char *) malloc(strlen(cmdLine)+1);  /* Holds copy of the command line        */
     strcpy(cmdCopy, cmdLine);                            /* Make the copy                         */
+    Process *newProc;                                    /* New Process Pointer */
     cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
     cmdLine = RemoveWhitespace(cmdLine);                 /* Remove leading/trailing whitespace    */
     
-    if (CheckCommand(cmdLine, isBackground))             /* Check for invalid character placement */
+    if (CheckCommand(cmdLine, &isBg))                    /* Check for invalid character placement */
         return 0;
 
     Cmds = Pipes2Arrays(cmdLine);                        /* Breakup command into  *array[][]      */
@@ -218,18 +218,25 @@ char RunCommand(char *cmdLine)
         CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]));    /* pwd & print + completed message       */
         
     } else {                                             /* Otherwise, try executing the program  */
-        AddProcess(processList, 0, cmdCopy);             /* Add to list of background processes   */
-        ExecProgram((char ***)Cmds, 0, STDIN_FILENO, *isBackground);
+        newProc = AddProcess(processList, 0, cmdCopy, isBg, 0); /* Add to list of background processes   */
+        ExecProgram((char ***)Cmds, 0, newProc);
     }
     return 0;
 }
 /* **************************************************** */
 
 /* **************************************************** */
+/* Function to redirect file descriptors                */
+/* **************************************************** */
+
+
+/* **************************************************** */
+
+/* **************************************************** */
 /* Function to execute program commands                 */
 /* If function is piped, execProgram() is recursive     */
 /* **************************************************** */
-int ExecProgram(char **cmds[], int N, int FD, char BG)
+int ExecProgram(char **cmds[], int N, Process *P)
 {
     int status = 0;                                     /* Holds status                             */
     pid_t PID;                                          /* Holds the PID                            */
@@ -241,16 +248,16 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                 exit(EXIT_FAILURE);                     /* Exit with failure                        */
 
             case 0:                                     /* Child Process                            */
-                cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
+               // cmds[N][0] = SearchPath(cmds[N][0]);  /* Replace with full PATH to binary name    */
                 execvp(cmds[N][0], cmds[N]);            /* Execute command                          */
                 perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
 
             default:                                    /* Parent Process (PID > 0)                 */
-                processList->top->PID = PID;            /* Set the PID of the last process added    */
-                processList->top->status = status;      /* Set the status of the last process added */  
+                P->PID = PID;                           /* Set the PID of the last process added    */
+                P->status = status;                     /* Set the status of the last process added */
 
-                if (BG)                                 /* If it's to be run in background          */
+                if (P->isBG)                            /* If it's to be run in background          */
                     waitpid(PID, &status, WNOHANG);     /* Non-blocking call to waitpid             */
                 else { 
                     waitpid(PID, &status, 0);           /* Otherwise wait for child to exit         */
@@ -270,16 +277,16 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                 exit(EXIT_FAILURE);                     /* Exit with failure                        */
             case 0:                                     /* Child Process                            */
                 close(fdOut[0]);                        /* Don't need to read from pipe             */
-                dup2(FD, STDIN_FILENO);                 /* Link Input file descriptor to the pipe   */
+                dup2(P->fdIn, STDIN_FILENO);            /* Link Input file descriptor to the pipe   */
                 dup2(fdOut[1], STDOUT_FILENO);          /* Link output file descripter to STDOUT    */
-                cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
+                //cmds[N][0] = SearchPath(cmds[N][0]);  /* Replace with full PATH to binary name    */
                 execv(cmds[N][0], cmds[N]);             /* Execute the command                      */
                 perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
             default:                                    /* Parent Process                           */
                 close(fdOut[1]);                        /* Don't need to write to pipe              */
-                close(FD);                              /* Close existing stdout                    */
-                return ExecProgram(cmds, N+1, fdOut[0], BG);
+                close(P->fdIn);                         /* Close existing stdout                    */
+                //return ExecProgram(cmds, N+1, fdOut[0], BG);
         }
     }
     return 0;
