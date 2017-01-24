@@ -24,10 +24,11 @@
 void ChildSignalHandler(int signum)
 {
     pid_t PID;
-    int status;    
-    while ((PID = waitpid(-1, &status, WNOHANG)) > 0)   /* Allow multiple child processes to terminate if necessary */
+    int status;
+    while ((PID = waitpid(-1, &status, WNOHANG)) > 0) { /* Allow multiple child processes to terminate if necessary */
         if(MarkProcessDone(processList, PID, status))   /* Try to mark the process as completed                     */
-            processList->count--;                       /* Decrement process count if process was in the list       */
+                processList->count--;                   /* Decrement process count if process was in the list       */
+    }
 }
 /* **************************************************** */
 
@@ -199,7 +200,7 @@ char RunCommand(char *cmdLine)
     
     char *cmdCopy = (char *) malloc(strlen(cmdLine)+1);  /* Holds copy of the command line        */
     strcpy(cmdCopy, cmdLine);                            /* Make the copy                         */
-    //cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
+    cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
     cmdLine = RemoveWhitespace(cmdLine);                 /* Remove leading/trailing whitespace    */
     
     if (CheckCommand(cmdLine, isBackground))             /* Check for invalid character placement */
@@ -261,7 +262,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
             return status;
         }
     }
-               
+    
         /* THIS PART DOESN"T WORK YET */
     else {
         int fdOut[2];                                   /* Create file descriptor                   */
@@ -286,7 +287,6 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
     }
     return 0;
 }
-
 /* **************************************************** */
 
 /* **************************************************** */
@@ -327,24 +327,24 @@ int main(int argc, char *argv[], char *envp[])
     char keystroke, cmdLine[MAX_BUFFER];
     unsigned char tryExit = 0, keepRunning = 1;
 
-    processList = malloc(sizeof(BackgroundProcessList));/* Global list of processes being tracked */
+    processList = malloc(sizeof(BackgroundProcessList)); /* Global list of processes being tracked */
     History *history = (History*)malloc(sizeof(History));/* Local list of history entries */
-    InitShell(history, &cursorPos);                     /* Initialize the shell */
+    InitShell(history, &cursorPos);                      /* Initialize the shell */
 
-mainLoop:                                               /* Shell main loop label */
-    while (keepRunning) {                               /* Main Loop */
+mainLoop:                                                /* Shell main loop label */
+    while (keepRunning) {                                /* Main Loop */
         keystroke = GetChar();
         
-        switch(keystroke) {                             /* Process the keytroke */
-            case CTRL_D:                                /* CTRL + D */
+        switch(keystroke) {                              /* Process the keytroke */
+            case CTRL_D:                                 /* CTRL + D */
                 keepRunning = 0;
                 break;
            
-            case TAB:                                   /* TAB KEY */
+            case TAB:                                    /* TAB KEY */
                 ErrorBell();
                 break;
             
-            case BACKSPACE:                             /* BACKSPACE */
+            case BACKSPACE:                              /* BACKSPACE */
                 if (cursorPos) {
                     write(STDOUT_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
                     cursorPos -= 1;
@@ -353,58 +353,58 @@ mainLoop:                                               /* Shell main loop label
                     ErrorBell();
                 break;
             
-            case ESCAPE:                                /* ARROW KEYS */
+            case ESCAPE:                                 /* ARROW KEYS */
                 if (GetChar() == ARROW)
                     switch(GetChar()) {
-                        case UP:                        /* UP */
+                        case UP:                         /* UP */
                             DisplayNextEntry(history, cmdLine, &cursorPos);
                             break;
-                        case DOWN:                      /* DOWN */
+                        case DOWN:                       /* DOWN */
                             DisplayPrevEntry(history, cmdLine, &cursorPos);
                             break;
-                        case LEFT:                      /* LEFT */
+                        case LEFT:                       /* LEFT */
                             ErrorBell();
                             break;
-                        case RIGHT:                     /* RIGHT */
+                        case RIGHT:                      /* RIGHT */
                             ErrorBell();
                             break;
                     }
                 break;
 
-            case RETURN:                                /* ENTER KEY */
+            case RETURN:                                 /* ENTER KEY */
                 cmdLine[cursorPos] = '\0';
                 write(STDOUT_FILENO, "\n", strlen("\n"));
                 AddHistory(history, cmdLine, cursorPos);
                 CheckCompletedProcesses(processList);
                 if((tryExit = RunCommand(cmdLine)))
-                    keepRunning = 0;                    /* Stop the main loop if 'exit' received */
+                    keepRunning = 0;                     /* Stop the main loop if 'exit' received */
                 else                                              
                     DisplayPrompt(&cursorPos);       
                 break;
         
-            default:                                    /* ANY OTHER KEY */
-                if (cursorPos < MAX_BUFFER) {           /* Make sure there's room in the buffer */
+            default:                                     /* ANY OTHER KEY */
+                if (cursorPos < MAX_BUFFER) {            /* Make sure there's room in the buffer */
                     write(STDOUT_FILENO, &keystroke, 1);
                     cmdLine[cursorPos++] = keystroke;
                 } else
                     ErrorBell();
-        }                                               /* End switch statement */
-    }                                                   /* End Main Loop */
+        }                                                /* End switch statement */
+    }                                                    /* End Main Loop */
 
-    if (processList->count) {                           /* If background commands are still running */ 
-        ThrowError("Error: active jobs still running") ;/* Report the error */
-            if(tryExit) {                               /* If the command was "exit" (as opposed to Ctrl+D) */
-                CompleteCmd("exit", 1);                 /* Print '+ completed' message */
-                tryExit = 0;                            /* Reset the variable */
+    if (processList->count) {                            /* If background commands are still running */
+        ThrowError("Error: active jobs still running") ; /* Report the error */
+            if(tryExit) {                                /* If the command was "exit" (as opposed to Ctrl+D) */
+                CompleteCmd("exit", 1);                  /* Print '+ completed' message */
+                tryExit = 0;                             /* Reset the variable */
             }
-        CheckCompletedProcesses(processList);           /* Check for completed processes */
-        keepRunning = 1;                                /* Set the while loop to continue running */
-        DisplayPrompt(&cursorPos);                      /* Reprint the prompt */
-        goto mainLoop;                                  /* Re-enter main loop */
+        CheckCompletedProcesses(processList);            /* Check for completed processes */
+        keepRunning = 1;                                 /* Set the while loop to continue running */
+        DisplayPrompt(&cursorPos);                       /* Reprint the prompt */
+        goto mainLoop;                                   /* Re-enter main loop */
     }
 
-    ResetCanMode();                                     /* Switch back to previous terminal mode */
-    SayGoodbye();                                       /* Print the exit message */
+    ResetCanMode();                                      /* Switch back to previous terminal mode */
+    SayGoodbye();                                        /* Print the exit message */
     
     return EXIT_SUCCESS;
 }

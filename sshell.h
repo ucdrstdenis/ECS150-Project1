@@ -15,7 +15,6 @@ const char *BACKSPACE_CHAR = "\b \b";
 /*                       SShell                         */
 /* **************************************************** */
 void InitShell (History *history, int *cursorPos);      /* Initialize the shell and relevant objects            */
-void ChildSignalHandler(int signum);                    /* Signal handler for SIGCHLD                           */
 char *SearchPath(char *prog);	                        /* Returns a pointer to the full path specified binary  */
 char ChangeDir(char *args[]);                           /* Handles 'cd' commands                                */
 char PrintWDir(char *args[]);                           /* Handles 'pwd' commands                               */

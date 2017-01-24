@@ -27,13 +27,13 @@
 #define LEFT         0x44
 
 /* **************************************************** */
-/* Shell print characters                               */
+/*               Shell Print Characters                 */
 /* **************************************************** */
-extern const char *SHELL_PROMPT;                        /* Defined in sshell.h */
-extern const char *BELL;                                /* Defined in sshell.h */
-extern const char *NEWLINE;                             /* Defined in sshell.h */
-extern const char *EXITLINE;                            /* Defined in sshell.h */
-extern const char *BACKSPACE_CHAR;                      /* Defined in sshell.h */
+extern const char *SHELL_PROMPT;
+extern const char *BELL;
+extern const char *NEWLINE;
+extern const char *EXITLINE;
+extern const char *BACKSPACE_CHAR;
 /* **************************************************** */
 
 /* **************************************************** */
