@@ -1,7 +1,6 @@
 #ifndef _PROCESS_H
 #define _PROCESS_H
 
-
 /* **************************************************** */
 /*                Process Structures                    */
 /* **************************************************** */
@@ -36,9 +35,4 @@ void AddProcess(BackgroundProcessList *pList, pid_t PID, char *cmd);         /* 
 
 /* **************************************************** */
 
-
-
-
 #endif
-
-
