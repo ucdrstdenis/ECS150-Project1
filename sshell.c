@@ -119,7 +119,7 @@ char CheckCommand(char *cmd, char *isBackground)
         *isBackground = 1;                              /* Set the Background flag                */
         *end = '\0';                                    /* Remove '&' from the command            */
     }
-    
+
     return 0;
 }
 /* **************************************************** */
@@ -200,7 +200,7 @@ char RunCommand(char *cmdLine)
     
     char *cmdCopy = (char *) malloc(strlen(cmdLine)+1);  /* Holds copy of the command line        */
     strcpy(cmdCopy, cmdLine);                            /* Make the copy                         */
-    //cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
+    cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
     cmdLine = RemoveWhitespace(cmdLine);                 /* Remove leading/trailing whitespace    */
     
     if (CheckCommand(cmdLine, isBackground))             /* Check for invalid character placement */
@@ -247,7 +247,6 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
             case -1:                                    /* fork() failed                            */
                 perror("fork");                         /* Report the error                         */
                 exit(EXIT_FAILURE);                     /* Exit with failure                        */
-			
             case 0:                                     /* Child Process                            */
                 cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
                 execvp(cmds[N][0], cmds[N]);            /* Execute command                          */

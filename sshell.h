@@ -25,6 +25,7 @@ char CheckCommand(char *cmd, char *isBackground);   	/* Check for invalid placem
 int  ExecProgram(char **cmds[], int N, int FD, char BG);/* Execute program commands, recursive if piped       	*/
 char **Cmd2Array (char *cmd);                       	/* Breaks up  a command into an array of arguments      */
 char ***Pipes2Array (char *cmd);                    	/* Breaks up command into arrays of piped arguments     */
+char *RemoveWhitespace(char *string);                   /* Strips trailing and leading whitespace from a string */
 /* **************************************************** */
 
 #endif

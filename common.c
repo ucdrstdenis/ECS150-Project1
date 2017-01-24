@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-//#include <ctype.h> /* isspace() */
 
 #include "common.h"
 
@@ -99,7 +98,7 @@ void CompleteCmd (char *cmd, int exitCode)
 /* **************************************************** */
 char Check4Space(char key)
 {
-    if (key == ' ' || key == '\t' || key == '\n')
+    if ((key == ' ') || (key == '\t') || (key == '\n'))
         return 1;
     else
         return 0;
@@ -126,10 +125,8 @@ char Check4Special(char *key)
 char *RemoveWhitespace(char *string)
 {
     unsigned int i = strlen(string);                    /* Length of the string                     */
-    
     while (Check4Space(string[i])) string[i--]='\0';    /* Remove trailing whitespace               */
     while (Check4Space(*string))   string++;            /* Remove leading whitespace                */
-    
     return string;                                      /* Return updated start address of string   */
 }
 /* **************************************************** */
@@ -142,7 +139,7 @@ char *InsertSpaces(char *cmd)
     char cVal;
     char *sLoc;
     char *newCmd = (char *) malloc(2*MAX_BUFFER);       /* Ensure buffer is big enough to hold cmd w/ new spaces */
-    char specialChar[] = "<>&";                         /* Special characters to insert spaces before and after  */
+    char specialChar[] = "<>";                          /* Special characters to insert spaces before and after  */
     *newCmd = '\0';                                     /* Terminate the empty string                            */
     sLoc  = strpbrk(cmd, specialChar);                  /* Points to first occurance of (<> or &)                */
     
@@ -150,13 +147,16 @@ char *InsertSpaces(char *cmd)
         cVal = Check4Special(sLoc);                     /* Save the type of character it is (<> or &)            */
         *sLoc = '\0';                                   /* Terminate the string                                  */
         sprintf(newCmd, "%s%s %c ", newCmd, cmd, cVal); /* Add spaces before and after the character             */
+	//ThrowError(newCmd);
         cmd = sLoc+1;
         sLoc = strpbrk(cmd, specialChar);               /* Points to the next occurance of (<> or &)             */
     }
     
-    if (*cmd != '\0')                                   /* If there are still characters in command              */
+    if (*cmd != '\0')  {                                /* If there are still characters in command              */
         sprintf(newCmd, "%s%s",newCmd,cmd);             /* Copy them to newCmd                                   */
-    
+    	//ThrowError(newCmd);
+    }
+
     return newCmd;                                      /* Return the pointer                                    */
 }
 /* **************************************************** */
