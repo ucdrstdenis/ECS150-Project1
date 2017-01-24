@@ -11,7 +11,7 @@
 /* **************************************************** */
 /*              User - defined .h files                 */
 /* **************************************************** */
-#include "process.h"					/* Function prototype and structs for process.c   */
+#include "process.h"                                    /* Function prototype and structs for process.c   */
 #include "common.h"                                     /* Keystrokes and common functions                */
 /* **************************************************** */
 
@@ -43,13 +43,14 @@ void AddProcess(BackgroundProcessList *pList, pid_t PID, char *cmd) {
 /* **************************************************** */
 /* Check if any processes have completed                */
 /* Print completed message if they have                 */
+/* @TODO the current node should be freed at some point */
+/* @TODO eliminate use of "prev" node since not needed  */
 /* **************************************************** */
 void CheckCompletedProcesses(BackgroundProcessList *pList) {
     Process *current = pList->top;
     while (current != NULL) {
         if (current->running == 0) {                    /* If process has completed */
-            CompleteCmd(current->cmd, current->status); /* Print completed message */     
-            // @TODO the current node should be freed at some point
+            CompleteCmd(current->cmd, current->status); /* Print completed message */
             if ((current->prev == NULL) && (current->next == NULL))    
                 pList->top = NULL;        
             if (current->prev != NULL)   
@@ -66,16 +67,18 @@ void CheckCompletedProcesses(BackgroundProcessList *pList) {
 
 /* **************************************************** */
 /* Mark process with matching PID as completed          */
+/* return 1 if matching PID in list, 0 otherwise        */
 /* **************************************************** */
-void MarkProcessDone(BackgroundProcessList *pList, pid_t PID, int status) {
+char MarkProcessDone(BackgroundProcessList *pList, pid_t PID, int status) {
     Process *current = pList->top;                      
     while(current != NULL) {                            /* Iterate through the process list */
         if (current->PID == PID) {                      /* Check to find the PID = completed PID */
             current->running = 0;
             current->status = status;
-            return;        
+            return 1;
         }
         current = current->next;
     }
+    return 0;                                           /* Process was not in the list */
 }
 /* **************************************************** */

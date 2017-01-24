@@ -28,7 +28,7 @@ BackgroundProcessList *processList;
 /* **************************************************** */
 /*                       Process                        */
 /* **************************************************** */
-void MarkProcessDone(BackgroundProcessList *pList, pid_t PID, int status);   /* Mark process with matching PID as completed          */
+char MarkProcessDone(BackgroundProcessList *pList, pid_t PID, int status);   /* Mark process with matching PID as completed          */
 void CheckCompletedProcesses(BackgroundProcessList *pList);                  /* Check if any processes have completed                */
 void AddProcess(BackgroundProcessList *pList, pid_t PID, char *cmd);         /* Add a process to the list of background processes    */
 /* **************************************************** */

@@ -25,9 +25,9 @@ void ChildSignalHandler(int signum)
 {
     pid_t PID;
     int status;    
-    while ((PID = waitpid(-1, &status, WNOHANG)) > 0) { /* Allow multiple child processes to terminate if necessary */
-        MarkProcessDone(processList, PID, status);
-    }
+    while ((PID = waitpid(-1, &status, WNOHANG)) > 0)   /* Allow multiple child processes to terminate if necessary */
+        MarkProcessDone(processList, PID, status);      /* Mark the process as completed  */
+    
     if (processList->count) processList->count--;       /* Prevent from becomming -1 */
 }
 /* **************************************************** */
