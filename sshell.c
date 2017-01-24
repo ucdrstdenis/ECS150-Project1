@@ -124,20 +124,6 @@ char CheckCommand(char *cmd, char *isBackground)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Strips trailing and leading whitespace from a string */
-/* **************************************************** */
-char *RemoveWhitespace(char *string)
-{
-    unsigned int i = strlen(string);                    /* Length of the string                     */
-
-    while (Check4Space(string[i])) string[i--]='\0';    /* Remove trailing whitespace               */
-    while (Check4Space(*string))   string++;            /* Remove leading whitespace                */
-    
-    return string;                                      /* Return updated start address of string   */
-}
-/* **************************************************** */
-
-/* **************************************************** */
 /* Breaks up a command into a NULL terminated           */ 
 /* dynamically allocated array.                         */
 /*                                                      */
@@ -180,7 +166,8 @@ char **Cmd2Array(char *cmd)
 /* "ls -la" -> {args0, NULL}                            */
 /* where args0 = {"ls", "-la", NULL}                    */
 /* **************************************************** */
-char ***Pipes2Arrays(char *cmd){
+char ***Pipes2Arrays(char *cmd)
+{
     unsigned int i = 0;
     char ***pipes =  (char ***) malloc(MAX_TOKENS * sizeof(char**));
     cmd = RemoveWhitespace(cmd);                        /* Remove leading/trailing whitespace                   */
@@ -212,6 +199,7 @@ char RunCommand(char *cmdLine)
     
     char *cmdCopy = (char *) malloc(strlen(cmdLine)+1);  /* Holds copy of the command line        */
     strcpy(cmdCopy, cmdLine);                            /* Make the copy                         */
+    cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
     cmdLine = RemoveWhitespace(cmdLine);                 /* Remove leading/trailing whitespace    */
     
     if (CheckCommand(cmdLine, isBackground))             /* Check for invalid character placement */
@@ -226,7 +214,7 @@ char RunCommand(char *cmdLine)
         return 1;
 
     if (!strcmp(Cmds[0][0], "cd")) {                     /* If first command = "cd"               */
-        CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]));    /* CD and print + completed message      */
+        CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]));    /* cd and print + completed message      */
     }
     else if (!strcmp(Cmds[0][0], "pwd")) {               /* If first command = "pwd"              */
         CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]));    /* pwd & print + completed message       */
@@ -262,7 +250,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                 cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
                 execvp(cmds[N][0], cmds[N]);            /* Execute command                          */
                 perror("execvp");                       /* Coming back here is an error             */
-                exit(1);                                /* Exit failure                             */
+                exit(EXIT_FAILURE);                     /* Exit failure                             */
             default:                                    /* Parent Process (PID > 0)                 */
                 if (BG) {                               /* If it's to be run in background          */
                     waitpid(PID, &status, WNOHANG);     /* Non-blocking call to waitpid             */
@@ -286,6 +274,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                 close(fdOut[0]);                        /* Don't need to read from pipe             */
                 dup2(FD, STDIN_FILENO);                 /* Link Input file descriptor to the pipe   */
                 dup2(fdOut[1], STDOUT_FILENO);          /* Link output file descripter to STDOUT    */
+                cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
                 execvp(cmds[N][0], cmds[N]);            /* Execute the command                      */
                 perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */

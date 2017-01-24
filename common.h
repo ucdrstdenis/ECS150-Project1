@@ -1,9 +1,9 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
-/* ************************************ */
-/*      Spec-Defined Assumptions        */
-/* ************************************ */
+/* **************************************************** */
+/*              Spec-Defined Assumptions                */
+/* **************************************************** */
 #define MAX_BUFFER    512
 #define MAX_TOKENS     16
 #define MAX_TOKEN_LEN  32
@@ -12,9 +12,9 @@
 #define TRUE            1
 #define FALSE           0
 
-/* ************************************ */
-/*          Keystroke Codes             */
-/* ************************************ */
+/* **************************************************** */
+/*                  Keystroke Codes                     */
+/* **************************************************** */
 #define CTRL_D       0x04
 #define TAB          0x09
 #define RETURN       0x0A
@@ -26,9 +26,9 @@
 #define RIGHT        0x43
 #define LEFT         0x44
 
-/* ************************************ */
-/*               Common                 */
-/* ************************************ */
+/* **************************************************** */
+/*                      Common                          */
+/* **************************************************** */
 void ErrorBell(void);                                   /* Sound Bell noise                                     */
 void Print2Shell (int fd, char *message, char newline); /* For debugging -Print message on STDOUT               */
 void ClearCmdLine (char *cmdLine, int *cursorPos);      /* Clear the current cmdLine buffer and STDIN           */
@@ -37,6 +37,9 @@ void ThrowError (char *message);                        /* Print error message t
 void SayGoodbye (void);                                 /* Prints the exit message                              */
 void CompleteCmd (char *cmd, char exitCode);            /* Prints + completed messages to STDOUT                */
 char Check4Space(char key);                             /* Checks if character is whitespace or not             */
-/* ************************************ */
+char Check4Special(char *key);                          /* Checks if special character of not                   */
+char *InsertSpaces(char *cmd);                          /* Inserts ' ' before and after all <>& characters      */
+char *RemoveWhitespace(char *string);                   /* Strips trailing and leading whitespace from a string */
+/* **************************************************** */
 
 #endif
