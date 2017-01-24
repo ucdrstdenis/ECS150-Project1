@@ -260,8 +260,8 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                 exit(EXIT_FAILURE);                     /* Exit with failure                        */
             case 0:                                     /* Child Process                            */
                 cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
-                execv(cmds[N][0], cmds[N]);             /* Execute command                          */
-                perror("execv");                        /* Coming back here is an error             */
+                execvp(cmds[N][0], cmds[N]);            /* Execute command                          */
+                perror("execvp");                       /* Coming back here is an error             */
                 exit(1);                                /* Exit failure                             */
             default:                                    /* Parent Process (PID > 0)                 */
                 if (BG) {                               /* If it's to be run in background          */
@@ -287,7 +287,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                 dup2(FD, STDIN_FILENO);                 /* Link Input file descriptor to the pipe   */
                 dup2(fdOut[1], STDOUT_FILENO);          /* Link output file descripter to STDOUT    */
                 execvp(cmds[N][0], cmds[N]);            /* Execute the command                      */
-                perror("execv");                        /* Coming back here is an error             */
+                perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
             default:                                    /* Parent Process                           */
                 close(fdOut[1]);                        /* Don't need to write to pipe              */
