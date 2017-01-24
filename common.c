@@ -6,6 +6,16 @@
 #include "common.h"
 
 /* **************************************************** */
+/*               Shell Print Characters                 */
+/* **************************************************** */
+const char *SHELL_PROMPT = "sshell$ ";
+const char *BELL = "\a";
+const char *NEWLINE = "\r\n";
+const char *EXITLINE = "Bye...\n";
+const char *BACKSPACE_CHAR = "\b \b";
+/* **************************************************** */
+
+/* **************************************************** */
 /*                  Sound Bell noise                    */
 /* **************************************************** */
 void ErrorBell(void)
@@ -32,6 +42,24 @@ void SayGoodbye (void)
 {
     write(STDERR_FILENO, EXITLINE, strlen(EXITLINE));
 }                    
+/* **************************************************** */
+
+/* **************************************************** */
+/* Prints the backspace character to STDOUT             */
+/* **************************************************** */
+void PrintBackspace (void)
+{
+    write(STDOUT_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
+}
+/* **************************************************** */
+
+/* **************************************************** */
+/* Prints the newline character to STDOUT               */
+/* **************************************************** */
+void PrintNL (void)
+{
+    write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
+}
 /* **************************************************** */
 
 /* **************************************************** */
@@ -83,9 +111,9 @@ char Check4Space(char key)
 /* **************************************************** */
 /* Checks if special character of not                   */
 /* **************************************************** */
-char Check4Special(char *key)
+char Check4Special(char key)
 {
-    switch (*key) {
+    switch (key) {
         case '&': return '&';
         case '<': return '<';
         case '>': return '>';
@@ -99,7 +127,7 @@ char Check4Special(char *key)
 /* **************************************************** */
 char *RemoveWhitespace(char *string)
 {
-    int i = strlen(string) - 1;                         /* String length, -1 to act for offset      */
+    int i = strlen(string) - 1;                         /* String length, -1 to acct for offset     */
     while (Check4Space(string[i])) string[i--]='\0';    /* Remove trailing whitespace               */
     while (Check4Space(*string))   string++;            /* Remove leading whitespace                */
     return string;                                      /* Return updated start address of string   */
@@ -112,14 +140,12 @@ char *RemoveWhitespace(char *string)
 char *InsertSpaces(char *cmd)
 {
     char cVal;
-    char *sLoc;
     char *newCmd = (char *) malloc(2*MAX_BUFFER);       /* Ensure buffer is big enough to hold cmd w/ new spaces */
     char specialChar[] = "<>&";                         /* Special characters to insert spaces before and after  */
-    *newCmd = '\0';                                     /* Terminate the empty string                            */
-    sLoc  = strpbrk(cmd, specialChar);                  /* Points to first occurance of (<> or &)                */
+    char *sLoc  = strpbrk(cmd, specialChar);            /* Points to first occurance of (<> or &)                */
     
     while(sLoc != NULL) {                               /* Repeat until no more <>& are found                    */
-        cVal = Check4Special(sLoc);                     /* Save the type of character it is (<> or &)            */
+        cVal = Check4Special(*sLoc);                    /* Save the type of character it is (<> or &)            */
         *sLoc = '\0';                                   /* Terminate the string                                  */
         sprintf(newCmd, "%s%s %c ", newCmd, cmd, cVal); /* Add spaces before and after the character             */
         cmd = sLoc+1;

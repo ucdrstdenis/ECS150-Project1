@@ -4,16 +4,6 @@
 #define xStat(status) WEXITSTATUS(status)
 
 /* **************************************************** */
-/*               Shell Print Characters                 */
-/* **************************************************** */
-const char *SHELL_PROMPT = "sshell$ ";
-const char *BELL = "\a";
-const char *NEWLINE = "\r\n";
-const char *EXITLINE = "Bye...\n";
-const char *BACKSPACE_CHAR = "\b \b";
-/* **************************************************** */
-
-/* **************************************************** */
 /*                       SShell                         */
 /* **************************************************** */
 void InitShell (History *history, int *cursorPos);      /* Initialize the shell and relevant objects            */

@@ -27,7 +27,7 @@ void ChildSignalHandler(int signum)
     int status;
     while ((PID = waitpid(-1, &status, WNOHANG)) > 0) {         /* Allow multiple child processes to terminate if necessary */
         if(MarkProcessDone(processList, PID, xStat(status))) 	/* Try to mark the process as completed                     */
-                processList->count--;                   	    /* Decrement process count if process was in the list       */
+                processList->count--;                           /* Decrement process count if process was in the list       */
     }
 }
 /* **************************************************** */
@@ -339,7 +339,7 @@ mainLoop:                                                /* Shell main loop labe
         
         switch(keystroke) {                              /* Process the keytroke */
             case CTRL_D:                                 /* CTRL + D */
-                write(STDOUT_FILENO, "\n", strlen("\n"));
+                PrintNL();
                 keepRunning = 0;
                 break;
            
@@ -349,7 +349,7 @@ mainLoop:                                                /* Shell main loop labe
             
             case BACKSPACE:                              /* BACKSPACE */
                 if (cursorPos) {
-                    write(STDOUT_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
+                    PrintBackspace();
                     cursorPos -= 1;
                 }
                 else
@@ -376,7 +376,7 @@ mainLoop:                                                /* Shell main loop labe
 
             case RETURN:                                 /* ENTER KEY */
                 cmdLine[cursorPos] = '\0';
-                write(STDOUT_FILENO, "\n", strlen("\n"));
+                PrintNL();
 
                 AddHistory(history, cmdLine, cursorPos);
                 CheckCompletedProcesses(processList);

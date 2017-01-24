@@ -12,22 +12,19 @@
 /* Add a process to the list of background processes    */
 /* **************************************************** */
 void AddProcess(ProcessList *pList, pid_t PID, char *cmd) {
-    Process *p = (Process*) malloc(sizeof(Process));
-    p->cmd = (char*) malloc(strlen(cmd)+1);
-    p->PID = PID;
-    p->status = 0;
-    p->running = 1;
-    strcpy(p->cmd, cmd);
+    Process *proc = (Process*) malloc(sizeof(Process));
+    proc->cmd = (char*) malloc(strlen(cmd)+1);
+    proc->PID = PID;
+    proc->status = 0;
+    proc->running = 1;
+    strcpy(proc->cmd, cmd);
 
     if (pList->count == 0) {
-        p->next = NULL;
-        p->prev = NULL;
-        pList->top = p;
+        proc->next = NULL;
+        pList->top = proc;
     } else {
-        pList->top->prev = p;
-        p->next = pList->top;
-        p->prev = NULL;
-        pList->top = p;
+        proc->next = pList->top;
+        pList->top = proc;
     }
     pList->count++;
 }
@@ -36,23 +33,22 @@ void AddProcess(ProcessList *pList, pid_t PID, char *cmd) {
 /* **************************************************** */
 /* Check if any processes have completed                */
 /* Print completed message if they have                 */
-/* @TODO the current node should be freed at some point */
-/* @TODO eliminate use of "prev" node since not needed  */
 /* **************************************************** */
 void CheckCompletedProcesses(ProcessList *pList) {
     Process *current = pList->top;
-    while (current != NULL) {
-        if (current->running == 0) {                    /* If process has completed */
-            CompleteCmd(current->cmd, current->status); /* Print completed message */
-            if ((current->prev == NULL) && (current->next == NULL))    
-                pList->top = NULL;        
-            if (current->prev != NULL)   
-                current->prev->next = current->next;
-            if (current->next != NULL) {                /* Then remove the node  from the list */
-                current->next->prev = current->prev;
-                current = current->prev;
-            }    
+    Process *previous = NULL;
+    while (current != NULL) {                           /* Iterate through the list 	*/
+        if (current->running == 0) {                    /* If process has completed 	*/
+            CompleteCmd(current->cmd, current->status); /* Print completed message 	    */
+	    
+	        if (previous == NULL)                       /* Prepare to delete the node 	*/
+                pList->top = current->next;
+	        else
+                previous->next = current->next;	      
+	        free(current);                              /* Delete the node              */			
+	        break;                                      /* Break from teh loop          */
         }   
+	    previous = current;
         current = current->next;  
     }
 }

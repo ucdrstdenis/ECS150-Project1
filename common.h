@@ -27,26 +27,18 @@
 #define LEFT         0x44
 
 /* **************************************************** */
-/*               Shell Print Characters                 */
-/* **************************************************** */
-extern const char *SHELL_PROMPT;
-extern const char *BELL;
-extern const char *NEWLINE;
-extern const char *EXITLINE;
-extern const char *BACKSPACE_CHAR;
-/* **************************************************** */
-
-/* **************************************************** */
 /*                      Common                          */
 /* **************************************************** */
 void ErrorBell(void);                                   /* Sound Bell noise                                     */
 void ClearCmdLine (char *cmdLine, int *cursorPos);      /* Clear the current cmdLine buffer and STDIN           */
 void DisplayPrompt (int *cursorPos);                    /* Displace the main sshell$ prompt                     */
+void PrintBackspace (void);				/* Prints Backspace character to STDOUT 		*/
+void PrintNL (void);					/* Prints the newline character to STDOUT 		*/
 void ThrowError (char *message);                        /* Print error message to STDERR                        */
 void SayGoodbye (void);                                 /* Prints the exit message                              */
 void CompleteCmd (char *cmd, int exitCode);             /* Prints + completed messages to STDOUT                */
 char Check4Space(char key);                    		/* Checks if character is whitespace or not             */
-char Check4Special(char *key);                          /* Checks if special character of not                   */
+char Check4Special(char key);                           /* Checks if special character of not                   */
 char *RemoveWhitespace(char *string);                   /* Strips trailing and leading whitespace from a string */
 char *InsertSpaces(char *cmd);                          /* Inserts ' ' before and after all <>& characters      */
 /* **************************************************** */
