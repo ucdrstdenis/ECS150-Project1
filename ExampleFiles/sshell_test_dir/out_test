@@ -1,3 +1,0 @@
-sshell$ sleep 1&
-sshell$ sleep 2
-sshell$ exit
