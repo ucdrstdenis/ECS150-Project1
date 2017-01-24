@@ -21,6 +21,7 @@ Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char isBG, int fdI
     proc->isBG    = isBG;
     proc->fdIn    = fdIn;
     proc->child   = NULL;
+    proc->parent  = NULL;                               /* @TODO This should be set to the main shell PID */
     strcpy(proc->cmd, cmd);
     
     if (pList->count == 0) {
@@ -38,17 +39,19 @@ Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char isBG, int fdI
 /* **************************************************** */
 /* Add a process as a child of another processs         */
 /* **************************************************** */
-void AddProcessAsChild(ProcessList *pList, pid_t pPID, pid_t cPID, char *cmd, char isBG, int fdIn)
+Process *AddProcessAsChild(ProcessList *pList, pid_t pPID, pid_t cPID, char *cmd, char isBG, int fdIn)
 {
     Process *child = (Process*) AddProcess(pList, cPID, cmd, isBG, fdIn);
     Process *parent = pList->top;
     while (parent != NULL) {
         if (parent->PID == pPID) {
             parent->child = child;
-            return;
+            child->parent = parent;
+            return child;
         }
         parent = parent->next;
     }
+    return NULL;
 }
 /* **************************************************** */
 

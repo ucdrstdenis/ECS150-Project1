@@ -218,7 +218,7 @@ char RunCommand(char *cmdLine)
         CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]));    /* pwd & print + completed message       */
         
     } else {                                             /* Otherwise, try executing the program  */
-        newProc = AddProcess(processList, 0, cmdCopy, isBg, 0); /* Add to list of background processes   */
+        newProc = AddProcess(processList, 0, cmdCopy, isBg, SI); /* Add to list of background processes   */
         ExecProgram((char ***)Cmds, 0, newProc);
     }
     return 0;
@@ -227,9 +227,20 @@ char RunCommand(char *cmdLine)
 
 /* **************************************************** */
 /* Function to redirect file descriptors                */
+/* See recursive-piping reference                       */
 /* **************************************************** */
-
-
+void redirect(int fdOld, int fdNew)
+{
+    if (fdOld != fdNew) {                               /* Check file descriptors are not the same */
+        if(dup2(fdOld, fdNew) != -1) {                  /* Check dup2() succeeds                   */
+            if (close(fdOld) == -1)                     /* Check close() doesn't fail              */
+                perror("close");                        /* Report the error if close fails         */
+        } else {                                        /* If dup2() fails                         */
+            perror("dup2");                             /* Report the error                        */
+            exit(EXIT_FAILURE);                         /* Exit with failure                       */
+        }
+    }
+}
 /* **************************************************** */
 
 /* **************************************************** */
@@ -240,7 +251,6 @@ int ExecProgram(char **cmds[], int N, Process *P)
 {
     int status = 0;                                     /* Holds status                             */
     pid_t PID;                                          /* Holds the PID                            */
-    
     if (cmds[N+1] == NULL) {                            /* If there's only 1 command in the array   */
         switch((PID = fork())) {
             case -1:                                    /* fork() failed                            */
@@ -249,6 +259,7 @@ int ExecProgram(char **cmds[], int N, Process *P)
 
             case 0:                                     /* Child Process                            */
                // cmds[N][0] = SearchPath(cmds[N][0]);  /* Replace with full PATH to binary name    */
+                redirect(P->fdIn, SI);                  /* Read from fdIn, auto write to STDOUT     */
                 execvp(cmds[N][0], cmds[N]);            /* Execute command                          */
                 perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
@@ -256,7 +267,6 @@ int ExecProgram(char **cmds[], int N, Process *P)
             default:                                    /* Parent Process (PID > 0)                 */
                 P->PID = PID;                           /* Set the PID of the last process added    */
                 P->status = status;                     /* Set the status of the last process added */
-
                 if (P->isBG)                            /* If it's to be run in background          */
                     waitpid(PID, &status, WNOHANG);     /* Non-blocking call to waitpid             */
                 else { 
@@ -265,31 +275,33 @@ int ExecProgram(char **cmds[], int N, Process *P)
                 }                
             return xStat(status);
         }
-    }
-    
-        /* THIS PART DOESN"T WORK YET */
-    else {
+    } else {
+        Process *cP;                                    /* Pointer to child process */
         int fdOut[2];                                   /* Create file descriptor                   */
         pipe(fdOut);                                    /* Create pipe                              */
         switch((PID = fork())) {
             case -1:                                    /* If fork fails                            */
                 perror("fork");                         /* Report the error                         */
                 exit(EXIT_FAILURE);                     /* Exit with failure                        */
+            
             case 0:                                     /* Child Process                            */
                 close(fdOut[0]);                        /* Don't need to read from pipe             */
-                dup2(P->fdIn, STDIN_FILENO);            /* Link Input file descriptor to the pipe   */
-                dup2(fdOut[1], STDOUT_FILENO);          /* Link output file descripter to STDOUT    */
+                redirect(P->fdIn, SI);                  /* Link Input file descriptor to the pipe   */
+                redirect(fdOut[1], SO);                 /* Link output file descripter to STDOUT    */
                 //cmds[N][0] = SearchPath(cmds[N][0]);  /* Replace with full PATH to binary name    */
-                execv(cmds[N][0], cmds[N]);             /* Execute the command                      */
+                execvp(cmds[N][0], cmds[N]);            /* Execute the command                      */
                 perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
+            
             default:                                    /* Parent Process                           */
+                P->PID = PID;                           /* Set the PID of the last process added    */
+                P->status = status;                     /* Set the status of the last process added */
                 close(fdOut[1]);                        /* Don't need to write to pipe              */
                 close(P->fdIn);                         /* Close existing stdout                    */
-                //return ExecProgram(cmds, N+1, fdOut[0], BG);
+                cP = AddProcessAsChild(processList, PID, 0, "\0", P->isBG, fdOut[0]);
+                return ExecProgram(cmds, N+1, cP);
         }
     }
-    return 0;
 }
 /* **************************************************** */
 

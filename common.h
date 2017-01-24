@@ -12,6 +12,10 @@
 #define TRUE            1
 #define FALSE           0
 
+#define SI              STDIN_FILENO
+#define SO              STDOUT_FILENO
+#define SE              STDERR_FILENO
+
 /* **************************************************** */
 /*                  Keystroke Codes                     */
 /* **************************************************** */

@@ -13,6 +13,7 @@ typedef struct Process {                                /* Process Node         
     int fdIn;                                           /* Input file descriptor                    */
     struct Process *next;                               /* points to next process in list           */
     struct Process *child;                              /* Points to child process if it exists     */
+    struct Process *parent;                             /* Points to parent process                 */
 } Process;
 
 typedef struct ProcessList {                            /* Maintains list of running processes      */
@@ -33,7 +34,7 @@ ProcessList *processList;
 char MarkProcessDone(ProcessList *pList, pid_t PID, int status);                      /* Mark process with matching PID as completed          */
 void CheckCompletedProcesses(ProcessList *pList);                                     /* Check if any processes have completed                */
 Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char isBG, int fdIn);   /* Add a process to the list of background processes    */
-void AddProcessAsChild(ProcessList *pList, pid_t pPID, pid_t cPID, char *cmd, char isBG, int fdIn);
+Process *AddProcessAsChild(ProcessList *pList, pid_t pPID, pid_t cPID, char *cmd, char isBG, int fdIn);
 /* **************************************************** */
 
 #endif
