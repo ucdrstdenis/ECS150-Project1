@@ -8,8 +8,9 @@ typedef struct Process {                                /* Process Node         
     pid_t PID;	                                        /* PID of command that was run              */
     char *cmd;                                          /* command that was executed                */
     char running;                                       /* 1 if running, 0 if complete              */
-    char status;                                        /* Completion Status when process completed */
+    char status;                                        /* Completion status when process completed */
     struct Process *next;                               /* points to next process in list           */
+    struct Process *nextSubProcess;			/* Points to child process if it exists     */
 } Process;
 
 typedef struct ProcessList {                  		/* Maintains list of background processes   */
@@ -19,7 +20,7 @@ typedef struct ProcessList {                  		/* Maintains list of background 
 /* **************************************************** */
 
 /* **************************************************** */
-/*                Global Structures                     */
+/*                  Global Structures                   */
 /* **************************************************** */
 ProcessList *processList; 
 /* **************************************************** */

@@ -26,7 +26,7 @@ void AddProcess(ProcessList *pList, pid_t PID, char *cmd) {
         proc->next = pList->top;
         pList->top = proc;
     }
-    pList->count++;
+    pList->count++;                                     /* Increment the count of processes in the list */
 }
 /* **************************************************** */
 
