@@ -10,7 +10,7 @@ typedef struct Process {                                /* Process Node         
     char running;                                       /* 1 if running, 0 if complete              */
     char status;                                        /* Completion status when process completed */
     struct Process *next;                               /* points to next process in list           */
-    struct Process *nextSubProcess;			/* Points to child process if it exists     */
+    struct Process *subProcess;				/* Points to child process if it exists     */
 } Process;
 
 typedef struct ProcessList {                  		/* Maintains list of background processes   */

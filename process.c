@@ -40,13 +40,13 @@ void CheckCompletedProcesses(ProcessList *pList) {
     while (current != NULL) {                           /* Iterate through the list 	*/
         if (current->running == 0) {                    /* If process has completed 	*/
             CompleteCmd(current->cmd, current->status); /* Print completed message 	    */
-	    
 	        if (previous == NULL)                       /* Prepare to delete the node 	*/
                 pList->top = current->next;
 	        else
                 previous->next = current->next;	      
-	        free(current);                              /* Delete the node              */			
-	        break;                                      /* Break from teh loop          */
+	        free(current);                              /* Delete the node              */	
+            pList->count--;                             /* Decrement the process count  */		
+	        break;                                      /* Break from the loop          */
         }   
 	    previous = current;
         current = current->next;  

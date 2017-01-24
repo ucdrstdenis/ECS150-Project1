@@ -24,11 +24,9 @@
 void ChildSignalHandler(int signum)
 {
     pid_t PID;
-    int status;
-    while ((PID = waitpid(-1, &status, WNOHANG)) > 0) {         /* Allow multiple child processes to terminate if necessary */
-        if(MarkProcessDone(processList, PID, xStat(status))) 	/* Try to mark the process as completed                     */
-                processList->count--;                           /* Decrement process count if process was in the list       */
-    }
+    int status = 0;
+    while ((PID = waitpid(-1, &status, WNOHANG)) > 0)    /* Allow multiple child processes to terminate if necessary */
+        MarkProcessDone(processList, PID, xStat(status));/* Mark the process as completed                     */
 }
 /* **************************************************** */
 
@@ -194,7 +192,6 @@ char ***Pipes2Arrays(char *cmd)
 /* **************************************************** */
 char RunCommand(char *cmdLine)
 {
-    int exitCode = 0;
     char ***Cmds = (char ***) malloc(MAX_TOKENS * sizeof(char**));
     char *isBackground = (char*) malloc(sizeof(char*));  /* Flag for background commands          */
     
@@ -221,13 +218,8 @@ char RunCommand(char *cmdLine)
         CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]));    /* pwd & print + completed message       */
         
     } else {                                             /* Otherwise, try executing the program  */
-        if(*isBackground)
-            AddProcess(processList, 0, cmdCopy);         /* Add to list of background processes   */
-        
-        exitCode = ExecProgram((char ***)Cmds, 0, STDIN_FILENO, *isBackground);
-        
-        if(!*isBackground)
-            CompleteCmd(cmdCopy, exitCode);
+        AddProcess(processList, 0, cmdCopy);             /* Add to list of background processes   */
+        ExecProgram((char ***)Cmds, 0, STDIN_FILENO, *isBackground);
     }
     return 0;
 }
@@ -255,12 +247,15 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
 
             default:                                    /* Parent Process (PID > 0)                 */
-                if (BG) {                               /* If it's to be run in background          */
+                processList->top->PID = PID;            /* Set the PID of the last process added    */
+                processList->top->status = status;      /* Set the status of the last process added */  
+
+                if (BG)                                 /* If it's to be run in background          */
                     waitpid(PID, &status, WNOHANG);     /* Non-blocking call to waitpid             */
-                    processList->top->PID = PID;        /* Set the PID of the last process added    */
-                    processList->top->status = status;  /* Set the status of the last process added */
-                } else                                  /* Otherwise wait for child to exit         */
-                    waitpid(PID, &status, 0);           /* Otherwise, wait for child to exit        */
+                else { 
+                    waitpid(PID, &status, 0);           /* Otherwise wait for child to exit         */
+                    MarkProcessDone(processList, PID, xStat(status));
+                }                
             return xStat(status);
         }
     }
@@ -377,13 +372,11 @@ mainLoop:                                                /* Shell main loop labe
             case RETURN:                                 /* ENTER KEY */
                 cmdLine[cursorPos] = '\0';
                 PrintNL();
-
                 AddHistory(history, cmdLine, cursorPos);
-                CheckCompletedProcesses(processList);
-
                 if((tryExit = RunCommand(cmdLine)))
                     keepRunning = 0;                     /* Stop the main loop if 'exit' received */
-                else                                              
+                else                                    
+                    CheckCompletedProcesses(processList);          
                     DisplayPrompt(&cursorPos);       
                 break;
         
@@ -402,8 +395,8 @@ mainLoop:                                                /* Shell main loop labe
                 CompleteCmd("exit", 1);                  /* Print '+ completed' message */
                 tryExit = 0;                             /* Reset the variable */
             }
-        CheckCompletedProcesses(processList);            /* Check for completed processes */
         keepRunning = 1;                                 /* Set the while loop to continue running */
+        CheckCompletedProcesses(processList);            /* Check for completed processes */
         DisplayPrompt(&cursorPos);                       /* Reprint the prompt */
         goto mainLoop;                                   /* Re-enter main loop */
     }
