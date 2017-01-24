@@ -255,37 +255,48 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
     pid_t PID;                                          /* Holds the PID                            */
     
     if (cmds[N+1] == NULL) {                            /* If there's only 1 command in the array   */
-        if ((PID = fork()) != 0) {                      /* Parent Process                           */
-            if (BG) {                                   /* If it's to be run in background          */
-                waitpid(PID, &status, WNOHANG);         /* Non-blocking call to waitpid             */  
-                processList->top->PID = PID;            /* Set the PID of the last process added    */       
-                processList->top->status = status;      /* Set the status of the last process added */       
-            } else                                      /* Otherwise wait for child to exit         */
-                waitpid(PID, &status, 0);               /* Otherwise, wait for child to exit        */
+        switch((PID = fork()) {
+            case -1:                                    /* fork() failed                            */
+                perror("fork");                         /* Report the error                         */
+                exit(EXIT_FAILURE);                     /* Exit with failure                        */
+            
+            case 0:                                     /* Child Process                            */
+                cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
+                execv(cmds[N][0], cmds[N]);             /* Execute command                          */
+                perror("execv");                        /* Coming back here is an error             */
+                exit(EXIT_FAILURE);                     /* Exit failure                             */
+            
+            case (PID > 0):                             /* Parent Process (PID > 0)                 */
+                if (BG) {                               /* If it's to be run in background          */
+                    waitpid(PID, &status, WNOHANG);     /* Non-blocking call to waitpid             */
+                    processList->top->PID = PID;        /* Set the PID of the last process added    */
+                    processList->top->status = status;  /* Set the status of the last process added */
+                } else                                  /* Otherwise wait for child to exit         */
+                    waitpid(PID, &status, 0);           /* Otherwise, wait for child to exit        */
             return status;
-
-        } else {                                        /* Child Process                            */
-            cmds[N][0] = SearchPath(cmds[N][0]);        /* Replace with full PATH to binary name    */
-            execv(cmds[N][0], cmds[N]);                 /* Execute command                          */
-            perror("execv");                            /* Coming back here is an error             */
-            exit(EXIT_FAILURE);                         /* Exit failure                             */
         }
     }
-
-    /* THIS PART DOESN"T WORK YET */
+               
+        /* THIS PART DOESN"T WORK YET */
     else {
         int fdOut[2];                                   /* Create file descriptor                   */
         pipe(fdOut);                                    /* Create pipe                              */
-        if ((PID = fork()) == 0) {                      /* Child Process                            */
-            close(fdOut[0]);                            /* Don't need to read from pipe             */
-            dup2(FD, STDIN_FILENO);                     /* Link Input file descriptor to the pipe   */
-            dup2(fdOut[1], STDOUT_FILENO);              /* Link output file descripter to STDOUT    */
-            execvp(cmds[N][0], cmds[N]);
+        switch((PID = fork()) {
+            case -1:                                    /* If fork fails                            */
+                perror("fork");                         /* Report the error                         */
+                exit(EXIT_FAILURE);                     /* Exit with failure                        */
+            case 0:                                     /* Child Process                            */
+                close(fdOut[0]);                        /* Don't need to read from pipe             */
+                dup2(FD, STDIN_FILENO);                 /* Link Input file descriptor to the pipe   */
+                dup2(fdOut[1], STDOUT_FILENO);          /* Link output file descripter to STDOUT    */
+                execvp(cmds[N][0], cmds[N]);            /* Execute the command                      */
+                perror("execv");                        /* Coming back here is an error             */
+                exit(EXIT_FAILURE);                     /* Exit failure                             */
             
-        } else if (PID > 0) {                           /* Parent Process                           */
-            close(fdOut[1]);                            /* Don't need to write to pipe              */
-            close(FD);                                  /* Close existing stdout                    */
-            return ExecProgram(cmds, N+1, fdOut[0], BG);
+            case (PID > 0):                             /* Parent Process                           */
+                close(fdOut[1]);                        /* Don't need to write to pipe              */
+                close(FD);                              /* Close existing stdout                    */
+                return ExecProgram(cmds, N+1, fdOut[0], BG);
         }
     }
     return 0;
