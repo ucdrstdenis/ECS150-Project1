@@ -107,7 +107,7 @@ void CompleteCmd (char *cmd, char exitCode)
 /* **************************************************** */
 char Check4Space(char key)
 {
-    if (isspace(key) || key == '\t' || key == '\n')
+    if (key == ' ' || key == '\t' || key == '\n')
         return 1;
     else
         return 0;
