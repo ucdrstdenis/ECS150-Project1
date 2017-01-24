@@ -15,7 +15,7 @@
 #include "history.h"                                    /* History structures and related functions       */
 #include "noncanmode.h"                                 /* Modified version of the file provided by Joel  */
 #include "sshell.h"                                     /* Function prototypes for sshell.c functions     */
-#include "process.h"
+#include "process.h"                                    /* Functions for tracking background processes    */
 /* **************************************************** */
 
 /* **************************************************** */
@@ -234,9 +234,9 @@ char RunCommand(char *cmdLine)
     } else {                                             /* Otherwise, try executing the program  */
         if(*isBackground)
             AddProcess(processList, 0, cmdCopy);         /* Add to list of background processes   */
-
+        
         exitCode = ExecProgram((char ***)Cmds, 0, STDIN_FILENO, *isBackground);
-
+        
         if(!*isBackground)
             CompleteCmd(cmdCopy, exitCode);
     }
@@ -250,7 +250,7 @@ char RunCommand(char *cmdLine)
 /* **************************************************** */
 int ExecProgram(char **cmds[], int N, int FD, char BG)
 {
-    int status = 0;                                     /* Holds status                             */
+    int status;                                         /* Holds status                             */
     pid_t PID;                                          /* Holds the PID                            */
     
     if (cmds[N+1] == NULL) {                            /* If there's only 1 command in the array   */
@@ -262,7 +262,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                 cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
                 execv(cmds[N][0], cmds[N]);             /* Execute command                          */
                 perror("execv");                        /* Coming back here is an error             */
-                exit(EXIT_FAILURE);                     /* Exit failure                             */
+                exit(1);                                /* Exit failure                             */
             default:                                    /* Parent Process (PID > 0)                 */
                 if (BG) {                               /* If it's to be run in background          */
                     waitpid(PID, &status, WNOHANG);     /* Non-blocking call to waitpid             */
@@ -325,7 +325,6 @@ void InitShell(History *history, int *cursorPos)
     }
     
     SetNonCanMode();                                    /* Switch to non-canonical terminal mode            */
-    /* PrintWelcomeMessage() */                         // @TODO
     DisplayPrompt(cursorPos);                           /* Print the prompt and clear the cursor position   */
 }
 /* **************************************************** */
@@ -339,8 +338,8 @@ int main(int argc, char *argv[], char *envp[])
     char keystroke, cmdLine[MAX_BUFFER];
     unsigned char tryExit = 0, keepRunning = 1;
 
-    processList = malloc(sizeof(BackgroundProcessList));
-    History *history = (History*)malloc(sizeof(History));
+    processList = malloc(sizeof(BackgroundProcessList));/* Global list of processes being tracked */
+    History *history = (History*)malloc(sizeof(History));/* Local list of history entries */
     InitShell(history, &cursorPos);                     /* Initialize the shell */
 
 mainLoop:                                               /* Shell main loop label */
@@ -388,8 +387,6 @@ mainLoop:                                               /* Shell main loop label
                 write(STDOUT_FILENO, "\n", strlen("\n"));
                 AddHistory(history, cmdLine, cursorPos);
                 CheckCompletedProcesses(processList);
-
-                /* Check if background commands completed() */
                 if((tryExit = RunCommand(cmdLine)))
                     keepRunning = 0;                    /* Stop the main loop if 'exit' received */
                 else                                              
@@ -411,7 +408,7 @@ mainLoop:                                               /* Shell main loop label
                 CompleteCmd("exit", 1);                 /* Print '+ completed' message */
                 tryExit = 0;                            /* Reset the variable */
             }
-
+        CheckCompletedProcesses(processList);           /* Check for completed processes */
         keepRunning = 1;                                /* Set the while loop to continue running */
         DisplayPrompt(&cursorPos);                      /* Reprint the prompt */
         goto mainLoop;                                  /* Re-enter main loop */
