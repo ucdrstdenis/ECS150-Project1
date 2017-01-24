@@ -19,7 +19,7 @@ void ErrorBell(void)
 /* **************************************************** */
 void ThrowError (char *msg)
 {
-    char newMsg[MAX_BUFFER];
+    char *newMsg = (char *) malloc(strlen(msg)+2);
     sprintf(newMsg, "%s\n", msg);
     write(STDERR_FILENO, newMsg, strlen(newMsg));
 }                    
@@ -53,31 +53,6 @@ void ClearCmdLine(char *cmdLine, int *cursorPos)
         write(STDOUT_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
         *cursorPos -= 1;
     }
-}
-/* **************************************************** */
-
-/* **************************************************** */
-/* Print a message to the shell, used in debugging      */
-/* **************************************************** */
-void Print2Shell(int fd, char *message, char newline)
-{
-    if (fd == 0)
-        fd = STDOUT_FILENO;
-    
-    char msg2print[MAX_BUFFER]; 
-    int cursorPos = 0;
-    int i = 0;
-
-    if (newline)
-        msg2print[cursorPos++] = '\n';
-
-    while (message[i] != '\0') 
-        msg2print[cursorPos++] = message[i++];
-    
-    msg2print[cursorPos] = '\0'; 
-    write(fd, msg2print, strlen(msg2print));
-    ErrorBell();
-
 }
 /* **************************************************** */
 
@@ -124,7 +99,7 @@ char Check4Special(char *key)
 /* **************************************************** */
 char *RemoveWhitespace(char *string)
 {
-    unsigned int i = strlen(string);                    /* Length of the string                     */
+    int i = strlen(string) - 1;                         /* String length, -1 to act for offset      */
     while (Check4Space(string[i])) string[i--]='\0';    /* Remove trailing whitespace               */
     while (Check4Space(*string))   string++;            /* Remove leading whitespace                */
     return string;                                      /* Return updated start address of string   */
@@ -139,7 +114,7 @@ char *InsertSpaces(char *cmd)
     char cVal;
     char *sLoc;
     char *newCmd = (char *) malloc(2*MAX_BUFFER);       /* Ensure buffer is big enough to hold cmd w/ new spaces */
-    char specialChar[] = "<>";                          /* Special characters to insert spaces before and after  */
+    char specialChar[] = "<>&";                         /* Special characters to insert spaces before and after  */
     *newCmd = '\0';                                     /* Terminate the empty string                            */
     sLoc  = strpbrk(cmd, specialChar);                  /* Points to first occurance of (<> or &)                */
     
@@ -147,15 +122,12 @@ char *InsertSpaces(char *cmd)
         cVal = Check4Special(sLoc);                     /* Save the type of character it is (<> or &)            */
         *sLoc = '\0';                                   /* Terminate the string                                  */
         sprintf(newCmd, "%s%s %c ", newCmd, cmd, cVal); /* Add spaces before and after the character             */
-	//ThrowError(newCmd);
         cmd = sLoc+1;
         sLoc = strpbrk(cmd, specialChar);               /* Points to the next occurance of (<> or &)             */
     }
     
-    if (*cmd != '\0')  {                                /* If there are still characters in command              */
+    if (*cmd != '\0')	                                /* If there are still characters in command              */
         sprintf(newCmd, "%s%s",newCmd,cmd);             /* Copy them to newCmd                                   */
-    	//ThrowError(newCmd);
-    }
 
     return newCmd;                                      /* Return the pointer                                    */
 }

@@ -12,6 +12,7 @@ all: $(SOURCES) $(TARGET)
 clean:
 	rm -f $(OBJECTS)
 	rm -f $(TARGET)
+	rm -rf sshell_test_dir
 
 %.o: %.c $(HEADERS)
 	$(CC) $(CFLAGS) -c -o $@ $<

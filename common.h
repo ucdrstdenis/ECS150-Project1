@@ -40,7 +40,6 @@ extern const char *BACKSPACE_CHAR;
 /*                      Common                          */
 /* **************************************************** */
 void ErrorBell(void);                                   /* Sound Bell noise                                     */
-void Print2Shell (int fd, char *message, char newline); /* For debugging -Print message on STDOUT               */
 void ClearCmdLine (char *cmdLine, int *cursorPos);      /* Clear the current cmdLine buffer and STDIN           */
 void DisplayPrompt (int *cursorPos);                    /* Displace the main sshell$ prompt                     */
 void ThrowError (char *message);                        /* Print error message to STDERR                        */

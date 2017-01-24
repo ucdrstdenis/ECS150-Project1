@@ -200,7 +200,7 @@ char RunCommand(char *cmdLine)
     
     char *cmdCopy = (char *) malloc(strlen(cmdLine)+1);  /* Holds copy of the command line        */
     strcpy(cmdCopy, cmdLine);                            /* Make the copy                         */
-    cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
+    //cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
     cmdLine = RemoveWhitespace(cmdLine);                 /* Remove leading/trailing whitespace    */
     
     if (CheckCommand(cmdLine, isBackground))             /* Check for invalid character placement */
@@ -327,7 +327,7 @@ int main(int argc, char *argv[], char *envp[])
     char keystroke, cmdLine[MAX_BUFFER];
     unsigned char tryExit = 0, keepRunning = 1;
 
-    processList = malloc(sizeof(ProcessList)); 		 /* Global list of processes being tracked */
+    processList = malloc(sizeof(ProcessList)); 		     /* Global list of processes being tracked */
     History *history = (History*)malloc(sizeof(History));/* Local list of history entries */
     InitShell(history, &cursorPos);                      /* Initialize the shell */
 
