@@ -200,7 +200,7 @@ char RunCommand(char *cmdLine)
     
     char *cmdCopy = (char *) malloc(strlen(cmdLine)+1);  /* Holds copy of the command line        */
     strcpy(cmdCopy, cmdLine);                            /* Make the copy                         */
-    //cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
+    cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
     cmdLine = RemoveWhitespace(cmdLine);                 /* Remove leading/trailing whitespace    */
     
     if (CheckCommand(cmdLine, isBackground))             /* Check for invalid character placement */
@@ -247,11 +247,13 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
             case -1:                                    /* fork() failed                            */
                 perror("fork");                         /* Report the error                         */
                 exit(EXIT_FAILURE);                     /* Exit with failure                        */
+
             case 0:                                     /* Child Process                            */
                 cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
                 execvp(cmds[N][0], cmds[N]);            /* Execute command                          */
                 perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
+
             default:                                    /* Parent Process (PID > 0)                 */
                 if (BG) {                               /* If it's to be run in background          */
                     waitpid(PID, &status, WNOHANG);     /* Non-blocking call to waitpid             */
@@ -276,7 +278,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                 dup2(FD, STDIN_FILENO);                 /* Link Input file descriptor to the pipe   */
                 dup2(fdOut[1], STDOUT_FILENO);          /* Link output file descripter to STDOUT    */
                 cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
-                execv(cmds[N][0], cmds[N]);            /* Execute the command                      */
+                execv(cmds[N][0], cmds[N]);             /* Execute the command                      */
                 perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
             default:                                    /* Parent Process                           */
@@ -337,6 +339,7 @@ mainLoop:                                                /* Shell main loop labe
         
         switch(keystroke) {                              /* Process the keytroke */
             case CTRL_D:                                 /* CTRL + D */
+                write(STDOUT_FILENO, "\n", strlen("\n"));
                 keepRunning = 0;
                 break;
            
@@ -374,8 +377,10 @@ mainLoop:                                                /* Shell main loop labe
             case RETURN:                                 /* ENTER KEY */
                 cmdLine[cursorPos] = '\0';
                 write(STDOUT_FILENO, "\n", strlen("\n"));
+
                 AddHistory(history, cmdLine, cursorPos);
                 CheckCompletedProcesses(processList);
+
                 if((tryExit = RunCommand(cmdLine)))
                     keepRunning = 0;                     /* Stop the main loop if 'exit' received */
                 else                                              
