@@ -184,7 +184,7 @@ char **Cmd2Array(char *cmd)
 char ***Pipes2Arrays(char *cmd){
     unsigned int i = 0;
     char ***pipes =  (char ***) malloc(MAX_TOKENS * sizeof(char**));
-    cmd = RemoveWhitespace(cmd); 		                /* Remove leading/trailing whitespace                   */
+    cmd = RemoveWhitespace(cmd);                        /* Remove leading/trailing whitespace                   */
     char *bar = strchr(cmd, '|');                       /* bar points to the first occurance of '|' in cmd      */
     
     while(bar != NULL) {                                /* Repeat until no more '|' found or max tokens reached */
@@ -197,7 +197,7 @@ char ***Pipes2Arrays(char *cmd){
     if (*cmd != '\0')                                   /* If there are still characters in cmd                 */
         pipes[i++] = Cmd2Array(cmd);                    /* Add them to the array                                */
          
-    pipes[i] = NULL;					                /* Set the last entry to be NULL                        */
+    pipes[i] = NULL;                                    /* Set the last entry to be NULL                        */
     return pipes;                                       /* Return the pointer                                   */
 }
 /* **************************************************** */
