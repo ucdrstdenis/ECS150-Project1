@@ -129,22 +129,10 @@ char CheckCommand(char *cmd, char *isBackground)
 /* **************************************************** */
 char *RemoveWhitespace(char *string)
 {
-    unsigned char repeat = 1;                           /* Be sure to repeat the process if needed  */
     unsigned int i = strlen(string);                    /* Length of the string                     */
-    unsigned int iCpy;                                  /* Copy of the original string length       */
 
-
-    while ( repeat ) {
-	    iCpy = i;                                       /* Keep track of string length              */
-        while (isspace(string[i])) string[i--] = '\0';  /* Remove trailing whitespace               */
-	    while (string[i] == '\t')  string[i--] = '\0';  /* Remove trailing \t                       */
-        while (string[i] == '\n')  string[i--] = '\0';  /* Remove trailing \n                       */
-        while (isspace(*string))   string++;            /* Remove leading whitespace                */
-	    while (*string == '\t')    string++;            /* Remove leading \t                        */
-        while (*string == '\n')    string++;            /* Remove leading \n                        */
-	    if (strlen(string) != iCpy) i = strlen(string); /* If whitespace chars found, update length */
-        else repeat = 0;                                /* Otherwise exit the loop                  */  
-   }
+    while (Check4Space(string[i])) string[i--]='\0';    /* Remove trailing whitespace               */
+    while (Check4Space(*string))   string++;            /* Remove leading whitespace                */
     
     return string;                                      /* Return updated start address of string   */
 }

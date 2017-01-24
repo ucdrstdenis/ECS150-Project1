@@ -101,3 +101,15 @@ void CompleteCmd (char *cmd, char exitCode)
     write(STDERR_FILENO, msg, strlen(msg));
 }
 /* **************************************************** */
+
+/* **************************************************** */
+/* Checks if character is whitespace or not             */
+/* **************************************************** */
+char Check4Space(char key)
+{
+    if (isspace(key) || key == '\t' || key == '\n')
+        return 1;
+    else
+        return 0;
+}
+/* **************************************************** */
