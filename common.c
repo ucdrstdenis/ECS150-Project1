@@ -2,18 +2,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <ctype.h> /* isspace() */
 
 #include "common.h"
-
-/* **************************************************** */
-/* Shell print characters                               */
-/* **************************************************** */
-extern const char *SHELL_PROMPT;                        /* Defined in sshell.h */
-extern const char *BELL;                                /* Defined in sshell.h */
-extern const char *NEWLINE;                             /* Defined in sshell.h */
-extern const char *EXITLINE;                            /* Defined in sshell.h */
-extern const char *BACKSPACE_CHAR;                      /* Defined in sshell.h */
-/* **************************************************** */
 
 /* **************************************************** */
 /*                  Sound Bell noise                    */

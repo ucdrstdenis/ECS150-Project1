@@ -27,6 +27,16 @@
 #define LEFT         0x44
 
 /* **************************************************** */
+/* Shell print characters                               */
+/* **************************************************** */
+extern const char *SHELL_PROMPT;                        /* Defined in sshell.h */
+extern const char *BELL;                                /* Defined in sshell.h */
+extern const char *NEWLINE;                             /* Defined in sshell.h */
+extern const char *EXITLINE;                            /* Defined in sshell.h */
+extern const char *BACKSPACE_CHAR;                      /* Defined in sshell.h */
+/* **************************************************** */
+
+/* **************************************************** */
 /*                      Common                          */
 /* **************************************************** */
 void ErrorBell(void);                                   /* Sound Bell noise                                     */

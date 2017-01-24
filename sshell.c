@@ -199,7 +199,7 @@ char RunCommand(char *cmdLine)
     
     char *cmdCopy = (char *) malloc(strlen(cmdLine)+1);  /* Holds copy of the command line        */
     strcpy(cmdCopy, cmdLine);                            /* Make the copy                         */
-    cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
+    //cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
     cmdLine = RemoveWhitespace(cmdLine);                 /* Remove leading/trailing whitespace    */
     
     if (CheckCommand(cmdLine, isBackground))             /* Check for invalid character placement */
