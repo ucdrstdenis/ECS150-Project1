@@ -11,7 +11,7 @@
 /* **************************************************** */
 /* Add a process to the list of background processes    */
 /* **************************************************** */
-void AddProcess(BackgroundProcessList *pList, pid_t PID, char *cmd) {
+void AddProcess(ProcessList *pList, pid_t PID, char *cmd) {
     Process *p = (Process*) malloc(sizeof(Process));
     p->cmd = (char*) malloc(strlen(cmd)+1);
     p->PID = PID;
@@ -39,7 +39,7 @@ void AddProcess(BackgroundProcessList *pList, pid_t PID, char *cmd) {
 /* @TODO the current node should be freed at some point */
 /* @TODO eliminate use of "prev" node since not needed  */
 /* **************************************************** */
-void CheckCompletedProcesses(BackgroundProcessList *pList) {
+void CheckCompletedProcesses(ProcessList *pList) {
     Process *current = pList->top;
     while (current != NULL) {
         if (current->running == 0) {                    /* If process has completed */
@@ -62,7 +62,7 @@ void CheckCompletedProcesses(BackgroundProcessList *pList) {
 /* Mark process with matching PID as completed          */
 /* return 1 if matching PID in list, 0 otherwise        */
 /* **************************************************** */
-char MarkProcessDone(BackgroundProcessList *pList, pid_t PID, int status) {
+char MarkProcessDone(ProcessList *pList, pid_t PID, int status) {
     Process *current = pList->top;                      
     while(current != NULL) {                            /* Iterate through the process list */
         if (current->PID == PID) {                      /* Check to find the PID = completed PID */

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <ctype.h> /* isspace() */
+//#include <ctype.h> /* isspace() */
 
 #include "common.h"
 
@@ -85,7 +85,7 @@ void Print2Shell(int fd, char *message, char newline)
 /* **************************************************** */
 /* Prints '+ completed' messages to STDERR              */
 /* **************************************************** */
-void CompleteCmd (char *cmd, char exitCode)
+void CompleteCmd (char *cmd, int exitCode)
 {
     char msg[MAX_BUFFER + 25];
     sprintf(msg, "+ completed '%s' [%d]\n", cmd, exitCode);
@@ -99,7 +99,7 @@ void CompleteCmd (char *cmd, char exitCode)
 /* **************************************************** */
 char Check4Space(char key)
 {
-    if (isspace(key) || key == '\t' || key == '\n')
+    if (key == ' ' || key == '\t' || key == '\n')
         return 1;
     else
         return 0;

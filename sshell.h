@@ -1,6 +1,8 @@
 #ifndef _SSHELL_H
 #define _SSHELL_H
 
+#define xStat(status) WEXITSTATUS(status)
+
 /* **************************************************** */
 /*               Shell Print Characters                 */
 /* **************************************************** */

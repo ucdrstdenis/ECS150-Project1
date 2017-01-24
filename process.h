@@ -13,24 +13,24 @@ typedef struct Process {                                /* Process Node         
     struct Process *prev;                               /* points to  previous process in the list  */
 } Process;
 
-typedef struct BackgroundProcessList {                  /* Maintains list of background processes   */
+typedef struct ProcessList {                  		/* Maintains list of background processes   */
     unsigned int count;                                 /* Number of outstanding processes          */
     Process *top;                                       /* Process List                             */
-} BackgroundProcessList;
+} ProcessList;
 /* **************************************************** */
 
 /* **************************************************** */
 /*                Global Structures                     */
 /* **************************************************** */
-BackgroundProcessList *processList; 
+ProcessList *processList; 
 /* **************************************************** */
 
 /* **************************************************** */
 /*                       Process                        */
 /* **************************************************** */
-char MarkProcessDone(BackgroundProcessList *pList, pid_t PID, int status);   /* Mark process with matching PID as completed          */
-void CheckCompletedProcesses(BackgroundProcessList *pList);                  /* Check if any processes have completed                */
-void AddProcess(BackgroundProcessList *pList, pid_t PID, char *cmd);         /* Add a process to the list of background processes    */
+char MarkProcessDone(ProcessList *pList, pid_t PID, int status);   /* Mark process with matching PID as completed          */
+void CheckCompletedProcesses(ProcessList *pList);                  /* Check if any processes have completed                */
+void AddProcess(ProcessList *pList, pid_t PID, char *cmd);         /* Add a process to the list of background processes    */
 /* **************************************************** */
 
 #endif

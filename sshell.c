@@ -11,7 +11,7 @@
 /* **************************************************** */
 /*              User - defined .h files                 */
 /* **************************************************** */
-#include "common.h"                                     /* Keystrokes and common functions                */
+#include "common.h"                                     /* Keystrokes, parsing, & common functions        */
 #include "history.h"                                    /* History structures and related functions       */
 #include "noncanmode.h"                                 /* Modified version of the file provided by Joel  */
 #include "sshell.h"                                     /* Function prototypes for sshell.c functions     */
@@ -25,9 +25,9 @@ void ChildSignalHandler(int signum)
 {
     pid_t PID;
     int status;
-    while ((PID = waitpid(-1, &status, WNOHANG)) > 0) { /* Allow multiple child processes to terminate if necessary */
-        if(MarkProcessDone(processList, PID, status))   /* Try to mark the process as completed                     */
-                processList->count--;                   /* Decrement process count if process was in the list       */
+    while ((PID = waitpid(-1, &status, WNOHANG)) > 0) {         /* Allow multiple child processes to terminate if necessary */
+        if(MarkProcessDone(processList, PID, xStat(status))) 	/* Try to mark the process as completed                     */
+                processList->count--;                   	    /* Decrement process count if process was in the list       */
     }
 }
 /* **************************************************** */
@@ -200,7 +200,7 @@ char RunCommand(char *cmdLine)
     
     char *cmdCopy = (char *) malloc(strlen(cmdLine)+1);  /* Holds copy of the command line        */
     strcpy(cmdCopy, cmdLine);                            /* Make the copy                         */
-    cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
+    //cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
     cmdLine = RemoveWhitespace(cmdLine);                 /* Remove leading/trailing whitespace    */
     
     if (CheckCommand(cmdLine, isBackground))             /* Check for invalid character placement */
@@ -239,7 +239,7 @@ char RunCommand(char *cmdLine)
 /* **************************************************** */
 int ExecProgram(char **cmds[], int N, int FD, char BG)
 {
-    int status;                                         /* Holds status                             */
+    int status = 0;                                     /* Holds status                             */
     pid_t PID;                                          /* Holds the PID                            */
     
     if (cmds[N+1] == NULL) {                            /* If there's only 1 command in the array   */
@@ -247,6 +247,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
             case -1:                                    /* fork() failed                            */
                 perror("fork");                         /* Report the error                         */
                 exit(EXIT_FAILURE);                     /* Exit with failure                        */
+			
             case 0:                                     /* Child Process                            */
                 cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
                 execvp(cmds[N][0], cmds[N]);            /* Execute command                          */
@@ -259,7 +260,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                     processList->top->status = status;  /* Set the status of the last process added */
                 } else                                  /* Otherwise wait for child to exit         */
                     waitpid(PID, &status, 0);           /* Otherwise, wait for child to exit        */
-            return status;
+            return xStat(status);
         }
     }
     
@@ -276,7 +277,7 @@ int ExecProgram(char **cmds[], int N, int FD, char BG)
                 dup2(FD, STDIN_FILENO);                 /* Link Input file descriptor to the pipe   */
                 dup2(fdOut[1], STDOUT_FILENO);          /* Link output file descripter to STDOUT    */
                 cmds[N][0] = SearchPath(cmds[N][0]);    /* Replace with full PATH to binary name    */
-                execvp(cmds[N][0], cmds[N]);            /* Execute the command                      */
+                execv(cmds[N][0], cmds[N]);            /* Execute the command                      */
                 perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
             default:                                    /* Parent Process                           */
@@ -327,7 +328,7 @@ int main(int argc, char *argv[], char *envp[])
     char keystroke, cmdLine[MAX_BUFFER];
     unsigned char tryExit = 0, keepRunning = 1;
 
-    processList = malloc(sizeof(BackgroundProcessList)); /* Global list of processes being tracked */
+    processList = malloc(sizeof(ProcessList)); 		 /* Global list of processes being tracked */
     History *history = (History*)malloc(sizeof(History));/* Local list of history entries */
     InitShell(history, &cursorPos);                      /* Initialize the shell */
 
