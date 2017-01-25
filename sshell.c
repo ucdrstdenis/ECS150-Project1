@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <sys/types.h>
 
 /* **************************************************** */
 /*              User - defined .h files                 */
@@ -24,8 +25,13 @@ void ChildSignalHandler(int signum)
 {
     pid_t PID;
     int status = 0;
-    while ((PID = waitpid(-1, &status, WNOHANG)) > 0)    /* Allow multiple child processes to terminate if necessary */
+    char debug[MAX_BUFFER];
+    ThrowError("DEBUG: ChildSignalHandler returned");
+    while ((PID = waitpid(-1, &status, WNOHANG)) > 0){    /* Allow multiple child processes to terminate if necessary */
+   	sprintf(debug, "DEBUG: PID returned=%d, status returned=%d",xStat(status));
+	ThrowError(debug);
         MarkProcessDone(processList, PID, xStat(status));/* Mark the process as completed                            */
+    }
 }
 /* **************************************************** */
 
@@ -170,7 +176,8 @@ void ExecProgram(char **cmds[], int N, Process *P)
                 perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
                 
-            default:                                    /* Parent Process                           */                close(fdOut[1]);                        /* Don't need to write to pipe              */
+            default:                                    /* Parent Process                           */
+                close(fdOut[1]);                        /* Don't need to write to pipe              */
                 close(P->fdIn);                         /* Close existing stdout                    */
                 Wait4Me(cP);                            /* Blocking or non-blocking wait            */
                 ExecProgram(cmds, N+1, cP);             /* Execute the next command in the pipe     */
