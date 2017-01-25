@@ -25,7 +25,7 @@ typedef struct ProcessList {                            /* Maintains list of run
 /* **************************************************** */
 /*                  Global Structures                   */
 /* **************************************************** */
-ProcessList *processList; 
+ProcessList *processList;                               /* Global->easy access from signal handler  */
 /* **************************************************** */
 
 /* **************************************************** */

@@ -25,13 +25,14 @@ void ChildSignalHandler(int signum)
 {
     pid_t PID;
     int status = 0;
-    char debug[MAX_BUFFER];
-    ThrowError("DEBUG: ChildSignalHandler returned");
+    //char debug[MAX_BUFFER];
     while ((PID = waitpid(-1, &status, WNOHANG)) > 0){    /* Allow multiple child processes to terminate if necessary */
-   	sprintf(debug, "DEBUG: PID returned=%d, status returned=%d",xStat(status));
-	ThrowError(debug);
-        MarkProcessDone(processList, PID, xStat(status));/* Mark the process as completed                            */
+    //    sprintf(debug, "DEBUG: PID returned=%d, status returned=%d",xStat(status));
+    //    ThrowError(debug);
+        MarkProcessDone(processList, PID, xStat(status));/* Mark the process as completed                             */
     }
+    //sprintf(debug, "DEBUG: status returned=%d",xStat(status));
+    //ThrowError(debug);
 }
 /* **************************************************** */
 
@@ -42,7 +43,7 @@ void Wait4Me(Process *Me)
 {
     int status;
     if (Me->isBG) {                                     /* If it's to be run in background        */
-        waitpid(Me->PID, &status, WNOHANG);             /* Non-blocking call to waitpid           */
+        waitpid(Me->PID, &status, WNOHANG);             /* Use non-blocking call to waitpid       */
         Me->status = xStat(status);                     /* Set the temporary status               */
     } else {                                            /* Otherwise                              */
         waitpid(Me->PID, &status, 0);                   /* wait for child to exit                 */
@@ -84,7 +85,7 @@ char PrintWDir(char *args[])
 /* Breaks up a command into a NULL terminated           */ 
 /* dynamically allocated array.                         */
 /*                                                      */
-/*    "ls -l -a" -> {"ls","-l","-a", NULL};             */
+/*"ls -l -a" -> {"ls","-l","-a", NULL};                 */
 /* **************************************************** */
 char **Cmd2Array(char *cmd)
 {
@@ -161,13 +162,14 @@ void ExecProgram(char **cmds[], int N, Process *P)
         int fdOut[2];                                   /* Create file descriptors                  */
         Process *cP;                                    /* Pointer to new child process             */
         pipe(fdOut);                                    /* Create pipe                              */
+        
         cP = AddProcessAsChild(processList, P->PID, fork(), "\0", P->isBG, fdOut[0]);
         switch(cP->PID) {                               /* fork the process                         */
             case -1:                                    /* If fork fails                            */
                 perror("fork");                         /* Report the error                         */
                 exit(EXIT_FAILURE);                     /* Exit with failure                        */
                 
-            case 0:                                     /* Child Process                            */
+            case 0:                                     /* Child Process, writes to the pipe        */
                 close(fdOut[0]);                        /* Don't need to read from pipe             */
                 Dup2AndClose(P->fdIn, SI);              /* Link Input file descriptor to the pipe   */
                 Dup2AndClose(fdOut[1], SO);             /* Link output file descripter to STDOUT    */
@@ -176,11 +178,11 @@ void ExecProgram(char **cmds[], int N, Process *P)
                 perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
                 
-            default:                                    /* Parent Process                           */
+            default:                                    /* Parent Process, reads from the  pipe     */
                 close(fdOut[1]);                        /* Don't need to write to pipe              */
-                close(P->fdIn);                         /* Close existing stdout                    */
+                close(P->fdIn);                         /* Close existing input file descriptor     */
                 Wait4Me(cP);                            /* Blocking or non-blocking wait            */
-                ExecProgram(cmds, N+1, cP);             /* Execute the next command in the pipe     */
+                ExecProgram(cmds, N+1, cP);             /* Execute the first command in the array   */
         }
     }
 }
@@ -224,7 +226,7 @@ char RunCommand(char *cmdLine)
                 Wait4Me(P);                             /* Wait w/ blocking or non-blcoking       */
         }
     }
-    return 0;
+    return 0;                                           /* Continue main loop                     */
 }
 /* **************************************************** */
 
@@ -243,10 +245,12 @@ void InitShell(History *history, int *cursorPos)
     history->top = NULL;                                /* No history entries yet                           */
     history->current = NULL;                            /* Not currently viewing any entry                  */
     
-    /* Setup SIGCHLD interrupt handler */
+    /* Setup SIGCHLD signal handler */
     struct sigaction act;                               /* Sigaction struct for SIGCHLD signal handlers     */
-    act.sa_handler = ChildSignalHandler;                /* Setup interrupt handler                          */
-    
+    act.sa_flags = SA_RESTART | SA_NOCLDSTOP;           /* Avoid EINTR | Only call when process terminates  */
+    act.sa_handler = ChildSignalHandler;                /* Define signal handler                            */
+    sigemptyset(&act.sa_mask);                          /* From noncanmode.c                                */
+
     if (sigaction(SIGCHLD, &act, NULL)) {               /* Call sigaction, check for error                  */
         perror("sigaction");                            /* If theres an error, throw it                     */
         exit(1);                                        /* Terminate the program                            */
@@ -273,7 +277,7 @@ int main(int argc, char *argv[], char *envp[])
 mainLoop:                                                /* Shell main loop label */
     while (keepRunning) {                                /* Main Loop */
         keystroke = GetChar();
-        
+                                                         /* @TODO put switch statement into keystrokeHandler() */
         switch(keystroke) {                              /* Process the keytroke */
             case CTRL_D:                                 /* CTRL + D */
                 PrintNL();
