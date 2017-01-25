@@ -117,8 +117,8 @@ char Check4Special(char key)
         case '&': return '&';
         case '<': return '<';
         case '>': return '>';
+        default: return 0;
     }
-    return 0;
 }
 /* **************************************************** */
 
