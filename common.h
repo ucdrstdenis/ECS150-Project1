@@ -31,20 +31,26 @@
 #define LEFT         0x44
 
 /* **************************************************** */
-/*                      Common                          */
+/*                   Common functions                   */
 /* **************************************************** */
 void ErrorBell(void);                                   /* Sound Bell noise                                     */
+void SayGoodbye (void);                                 /* Prints the exit message                              */
+void PrintBackspace (void);                             /* Prints Backspace character to STDOUT                 */
+void PrintNL (void);                                    /* Prints the newline character to STDOUT               */
 void ClearCmdLine (char *cmdLine, int *cursorPos);      /* Clear the current cmdLine buffer and STDIN           */
 void DisplayPrompt (int *cursorPos);                    /* Displace the main sshell$ prompt                     */
-void PrintBackspace (void);				/* Prints Backspace character to STDOUT 		*/
-void PrintNL (void);					/* Prints the newline character to STDOUT 		*/
 void ThrowError (char *message);                        /* Print error message to STDERR                        */
-void SayGoodbye (void);                                 /* Prints the exit message                              */
 void CompleteCmd (char *cmd, int exitCode);             /* Prints + completed messages to STDOUT                */
-char Check4Space(char key);                    		/* Checks if character is whitespace or not             */
+void Dup2AndClose(int old, int new);                    /* Function to redirect file descriptors                */
+/* **************************************************** */
+/*                  Parsing functions                   */
+/* **************************************************** */
+char CheckCommand(char *cmd, char *isBackground);   	/* Check for invalid placement of special characters    */
+char Check4Space(char key);                             /* Checks if character is whitespace or not             */
 char Check4Special(char key);                           /* Checks if special character of not                   */
 char *RemoveWhitespace(char *string);                   /* Strips trailing and leading whitespace from a string */
 char *InsertSpaces(char *cmd);                          /* Inserts ' ' before and after all <>& characters      */
+char *SearchPath(char *prog);	                        /* Returns a pointer to the full path specified binary  */
 /* **************************************************** */
 
 #endif

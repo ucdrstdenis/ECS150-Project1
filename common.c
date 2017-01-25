@@ -14,7 +14,6 @@ const char *NEWLINE = "\r\n";
 const char *EXITLINE = "Bye...\n";
 const char *BACKSPACE_CHAR = "\b \b";
 /* **************************************************** */
-
 /* **************************************************** */
 /*                  Sound Bell noise                    */
 /* **************************************************** */
@@ -23,27 +22,14 @@ void ErrorBell(void)
     write(STDERR_FILENO, BELL, 1);
 }
 /* **************************************************** */
-
-/* **************************************************** */
-/* Print error message to STDERR                        */
-/* **************************************************** */
-void ThrowError (char *msg)
-{
-    char *newMsg = (char *) malloc(strlen(msg)+2);
-    sprintf(newMsg, "%s\n", msg);
-    write(STDERR_FILENO, newMsg, strlen(newMsg));
-}                    
-/* **************************************************** */
-
 /* **************************************************** */
 /* Prints the exit message                              */
 /* **************************************************** */
 void SayGoodbye (void)
 {
     write(STDERR_FILENO, EXITLINE, strlen(EXITLINE));
-}                    
+}
 /* **************************************************** */
-
 /* **************************************************** */
 /* Prints the backspace character to STDOUT             */
 /* **************************************************** */
@@ -52,7 +38,6 @@ void PrintBackspace (void)
     write(STDOUT_FILENO, BACKSPACE_CHAR, strlen(BACKSPACE_CHAR));
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Prints the newline character to STDOUT               */
 /* **************************************************** */
@@ -61,7 +46,6 @@ void PrintNL (void)
     write(STDOUT_FILENO, NEWLINE, strlen(NEWLINE));
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Displace the main sshell$ prompt                     */
 /* **************************************************** */
@@ -71,7 +55,6 @@ void DisplayPrompt(int *cursorPos)
     *cursorPos = 0;
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Clear the current cmdLine buffer and STDIN           */
 /* **************************************************** */
@@ -83,7 +66,16 @@ void ClearCmdLine(char *cmdLine, int *cursorPos)
     }
 }
 /* **************************************************** */
-
+/* **************************************************** */
+/* Print error message to STDERR                        */
+/* **************************************************** */
+void ThrowError (char *msg)
+{
+    char *newMsg = (char *) malloc(strlen(msg)+2);
+    sprintf(newMsg, "%s\n", msg);
+    write(STDERR_FILENO, newMsg, strlen(newMsg));
+}                    
+/* **************************************************** */
 /* **************************************************** */
 /* Prints '+ completed' messages to STDERR              */
 /* **************************************************** */
@@ -95,7 +87,6 @@ void CompleteCmd (char *cmd, int exitCode)
     write(STDERR_FILENO, msg, strlen(msg));
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Checks if character is whitespace or not             */
 /* **************************************************** */
@@ -107,7 +98,6 @@ char Check4Space(char key)
         return 0;
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Checks if special character of not                   */
 /* **************************************************** */
@@ -121,19 +111,17 @@ char Check4Special(char key)
     }
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Strips trailing and leading whitespace from a string */
 /* **************************************************** */
 char *RemoveWhitespace(char *string)
 {
     int i = strlen(string) - 1;                         /* String length, -1 to acct for offset     */
-    while (Check4Space(string[i])) string[i--]='\0';    /* Remove trailing whitespace               */
+    while (Check4Space(string[i])) string[i--] = '\0';  /* Remove trailing whitespace               */
     while (Check4Space(*string))   string++;            /* Remove leading whitespace                */
     return string;                                      /* Return updated start address of string   */
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Ensures a space before and after <>& characters      */
 /* **************************************************** */
@@ -158,3 +146,79 @@ char *InsertSpaces(char *cmd)
     return newCmd;                                      /* Return the pointer                                    */
 }
 /* **************************************************** */
+/* **************************************************** */
+/* Check for invalid placement of special characters    */
+/* Set background flag if '&' is last character         */
+/* Then remove '&' from the string                      */
+/* **************************************************** */
+char CheckCommand(char *cmd, char *isBackground)
+{
+    char s  = *cmd;                                     /* Get the first character in the array       */
+    char *end = strchr(cmd, '\0')-1;                    /* Get the last character in the array        */
+    *isBackground = 0;                                  /* Set the default flag                       */
+    if (*end == '|' || *end == '>' || *end == '<') {    /* Check the character at the end             */
+        ThrowError("Error: invalid command line");
+        return 1;
+    }
+    if (s == '|' || Check4Special(s)) {                 /* Check the character at the beginning       */
+        ThrowError("Error: invalid command line");
+        return 1;
+    }
+    if (*end == '&') {                                  /* If '&' is last character                   */
+        *isBackground = 1;                              /* Set the Background flag                    */
+        *end = '\0';                                    /* Remove '&' from the command                */
+    }
+    return 0;
+}
+/* **************************************************** */
+/* **************************************************** */
+/* Searches the PATH variable for the location of       */
+/* the specified program                                */
+/* Uses the first entry in PATH that has valid entry    */
+/*                                                      */
+/* NOT NEEDED IF EXECVP USED                            */
+/* Example - *PATH = /usr/bin:/opt/bin                  */
+/*           *prog = "ls"                               */
+/*           returns "/usr/bin/ls"                      */
+/* **************************************************** */
+char *SearchPath(char *prog) {
+    unsigned int len = strlen(prog);                    /* Length of the string of the passed program  */
+    char *binary  = (char *) malloc(MAX_BUFFER+len);    /* Pointer to hold the full name of the binary */
+    char *PATH = getenv("PATH");                        /* Store contents of the PATH variable         */
+    char *semi = strchr(PATH, ':');                     /* semi points to the first place ':' occurs   */
+    
+    while(semi != NULL) {                               /* Repeat until no more ':' found              */
+        *semi = '\0';                                   /* Terminate the string where ':' was          */
+        sprintf(binary, "%s/%s", PATH, prog);           /* Append the first path to binary name        */
+        if(access(binary, F_OK) != -1)                  /* If binary exists                            */
+            return binary;                              /* Return the full name of the binary          */
+        PATH = semi+1;                                  /* Update the address PATH points to           */
+        semi = strchr(PATH, ':');                       /* semi points to the next place ':' occurs    */
+    }
+    
+    sprintf(binary, "%s/%s", PATH, prog);               /* Append binary to last entry in path         */
+    if(access(binary, F_OK) != -1)                      /* If binary exists                            */
+        return binary;
+    else                                                /* If it doesn't exists                        */
+        binary = prog;                                  /* Just store the argument that was passed     */
+    
+    return binary;                                      /* Return the binary name                      */
+}
+/* **************************************************** */
+/* **************************************************** */
+/* Function to redirect file descriptors                */
+/* **************************************************** */
+void Dup2AndClose(int old, int new)
+{
+    if (old != new) {                                   /* Check file descriptors are not the same     */
+        if(dup2(old, new) != -1) {                      /* Check dup2() succeeds                       */
+            if (close(old) == -1)                       /* Check close() doesn't fail                  */
+                perror("close");                        /* Report the error if close fails             */
+        } else {                                        /* If dup2() fails                             */
+            perror("dup2");                             /* Report the error                            */
+            exit(EXIT_FAILURE);                         /* Exit with failure                           */
+        }
+    }
+}
+/* **************************************************** */
+

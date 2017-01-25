@@ -30,41 +30,6 @@ void ChildSignalHandler(int signum)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Searches the PATH variable for the location of       */
-/* the specified program                                */
-/* Uses the first entry in PATH that has valid entry    */
-/*                                                      */
-/* NOT NEEDED IF EXECVP USED                            */
-/* Example - *PATH = /usr/bin:/opt/bin                  */
-/*           *prog = "ls"                               */
-/*           returns "/usr/bin/ls"                      */
-/* **************************************************** */
-char *SearchPath(char *prog) {
-    unsigned int len = strlen(prog);                    /* Length of the string of the passed program  */
-    char *binary  = (char *) malloc(MAX_BUFFER+len);    /* Pointer to hold the full name of the binary */
-    char *PATH = getenv("PATH");                        /* Store contents of the PATH variable         */
-    char *semi = strchr(PATH, ':');                     /* semi points to the first place ':' occurs   */
-
-    while(semi != NULL) {                               /* Repeat until no more ':' found              */
-        *semi = '\0';                                   /* Terminate the string where ':' was          */
-        sprintf(binary, "%s/%s", PATH, prog);           /* Append the first path to binary name        */
-        if(access(binary, F_OK) != -1)                  /* If binary exists                            */
-            return binary;                              /* Return the full name of the binary          */
-        PATH = semi+1;                                  /* Update the address PATH points to           */
-        semi = strchr(PATH, ':');                       /* semi points to the next place ':' occurs    */
-    }
-    
-    sprintf(binary, "%s/%s", PATH, prog);               /* Append binary to last entry in path         */
-    if(access(binary, F_OK) != -1)                      /* If binary exists                            */
-        return binary;
-    else                                                /* If it doesn't exists                        */
-        binary = prog;                                  /* Just store the argument that was passed     */
-
-    return binary;                                      /* Return the binary name                      */
-}
-/* **************************************************** */
-
-/* **************************************************** */
 /* Change Directory Command  (handles cd)               */
 /* **************************************************** */
 char ChangeDir(char *args[])
@@ -89,34 +54,6 @@ char PrintWDir(char *args[])
 
     // @TODO search through args[] and setup output redirect if necesary
 
-    return 0;
-}
-/* **************************************************** */
-
-/* **************************************************** */
-/* Check for invalid placement of special characters    */
-/* Also set background flag if '&' is last character    */
-/* **************************************************** */
-char CheckCommand(char *cmd, char *isBackground)
-{
-    char s  = *cmd;                                     /* Get the first character in the array   */
-    char *end = strchr(cmd, '\0')-1;                    /* Get the last character in the array    */
-    *isBackground = 0;                                  /* Set the default flag                   */
-    
-    if (*end == '|' || *end == '>' || *end == '<') {    /* Check the character at the end         */
-        ThrowError("Error: invalid command line");
-        return 1;
-    }
-    
-    if (s == '|' || Check4Special(s)) {                 /* Check the character at the beginning   */
-        ThrowError("Error: invalid command line");
-        return 1;
-    }
-    
-    if (*end == '&') {                                  /* If '&' is last character               */
-        *isBackground = 1;                              /* Set the Background flag                */
-        *end = '\0';                                    /* Remove '&' from the command            */
-    }
     return 0;
 }
 /* **************************************************** */
@@ -190,77 +127,17 @@ char ***Pipes2Arrays(char *cmd)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Wrapper to execute whatever is sent from command line*/
-/* **************************************************** */
-char RunCommand(char *cmdLine)
-{
-    char ***Cmds = (char ***) malloc(MAX_TOKENS * sizeof(char**));
-    Process *P;                                          /* New Process Pointer                   */
-    char isBg = 0;                                       /* Flag for background commands          */
-    char *cmdCopy = (char *) malloc(strlen(cmdLine)+1);  /* Holds copy of the command line        */
-    
-    strcpy(cmdCopy, cmdLine);                            /* Make the copy                         */
-    cmdLine = InsertSpaces(cmdLine);                     /* Add spaces before and after <> or &   */
-    cmdLine = RemoveWhitespace(cmdLine);                 /* Remove leading/trailing whitespace    */
-    
-    if (CheckCommand(cmdLine, &isBg)) return 0;          /* Check for invalid character placement */
-    Cmds = Pipes2Arrays(cmdLine);                        /* Breakup command into  *array[][]      */
-    
-    if (Cmds[0] == NULL)              return 0;          /* Return if nothing in command line     */
-    if (!strcmp(Cmds[0][0], "exit"))  return 1;          /* 'exit' forces main loop to break      */
-    
-    if (!strcmp(Cmds[0][0], "cd"))                       /* If first command = "cd"               */
-        CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]));    /* cd and print + completed message      */
-    
-    else if (!strcmp(Cmds[0][0], "pwd"))                 /* If first command = "pwd"              */
-        CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]));    /* pwd & print + completed message       */
-    
-    else {                                               /* Otherwise, try executing the program  */
-        P = AddProcess(processList, fork(), cmdCopy, isBg, SI); /* Add to list of processes            */
-        
-        switch(P->PID) {
-            case -1:                                    /* fork() failed                          */
-                perror("fork");                         /* Report the error                       */
-                exit(EXIT_FAILURE);                     /* Exit with failure                      */
-            case 0:                                     /* Child Process                          */
-                ExecProgram((char ***)Cmds, 0, P);      /* Execute recursive piping               */
-            default:                                    /* Parent Process (PID > 0)               */
-                Wait4Me(P);                             /* Wait w/ blocking or non-blcoking       */
-        }
-    }
-    return 0;
-}
-/* **************************************************** */
-
-/* **************************************************** */
 /* Function to execute blocking or nonblocking wait()   */
 /* **************************************************** */
-void Wait4Me(Process *P)
+void Wait4Me(Process *Me)
 {
     int status;
-    if (P->isBG) {                                      /* If it's to be run in background        */
-        waitpid(P->PID, &status, WNOHANG);              /* Non-blocking call to waitpid           */
-        P->status = xStat(status);                      /* Set the temporary status               */
-    } else {                                            /* Otherwise                              */
-        waitpid(P->PID, &status, 0);                    /* wait for child to exit                 */
-        MarkProcessDone(processList, P->PID, xStat(status));
-    }
-}
-/* **************************************************** */
-
-/* **************************************************** */
-/* Function to redirect file descriptors                */
-/* **************************************************** */
-void Dup2AndClose(int fdOld, int fdNew)
-{
-    if (fdOld != fdNew) {                               /* Check file descriptors are not the same */
-        if(dup2(fdOld, fdNew) != -1) {                  /* Check dup2() succeeds                   */
-            if (close(fdOld) == -1)                     /* Check close() doesn't fail              */
-                perror("close");                        /* Report the error if close fails         */
-        } else {                                        /* If dup2() fails                         */
-            perror("dup2");                             /* Report the error                        */
-            exit(EXIT_FAILURE);                         /* Exit with failure                       */
-        }
+    if (Me->isBG) {                                      /* If it's to be run in background        */
+        waitpid(Me->PID, &status, WNOHANG);              /* Non-blocking call to waitpid           */
+        Me->status = xStat(status);                      /* Set the temporary status               */
+    } else {                                             /* Otherwise                              */
+        waitpid(Me->PID, &status, 0);                    /* wait for child to exit                 */
+        MarkProcessDone(processList, Me->PID, xStat(status));
     }
 }
 /* **************************************************** */
@@ -287,7 +164,7 @@ void ExecProgram(char **cmds[], int N, Process *P)
             case -1:                                    /* If fork fails                            */
                 perror("fork");                         /* Report the error                         */
                 exit(EXIT_FAILURE);                     /* Exit with failure                        */
-            
+                
             case 0:                                     /* Child Process                            */
                 close(fdOut[0]);                        /* Don't need to read from pipe             */
                 Dup2AndClose(P->fdIn, SI);              /* Link Input file descriptor to the pipe   */
@@ -296,13 +173,55 @@ void ExecProgram(char **cmds[], int N, Process *P)
                 execvp(cmds[N][0], cmds[N]);            /* Execute the command                      */
                 perror("execvp");                       /* Coming back here is an error             */
                 exit(EXIT_FAILURE);                     /* Exit failure                             */
-            
+                
             default:                                    /* Parent Process                           */                close(fdOut[1]);                        /* Don't need to write to pipe              */
                 close(P->fdIn);                         /* Close existing stdout                    */
                 Wait4Me(cP);                            /* Blocking or non-blocking wait            */
-                ExecProgram(cmds, N+1, cP);
+                ExecProgram(cmds, N+1, cP);             /* Execute the next command in the pipe     */
         }
     }
+}
+/* **************************************************** */
+
+/* **************************************************** */
+/* Wrapper to execute anything sent from command line   */
+/* **************************************************** */
+char RunCommand(char *cmdLine)
+{
+    char ***Cmds = (char ***) malloc(MAX_TOKENS * sizeof(char**));
+    Process *P;                                         /* New Process Pointer                   */
+    char isBg = 0;                                      /* Flag for background commands          */
+    char *cmdCopy = (char *) malloc(strlen(cmdLine)+1); /* Holds copy of the command line        */
+    
+    strcpy(cmdCopy, cmdLine);                           /* Make the copy                         */
+    cmdLine = InsertSpaces(cmdLine);                    /* Add spaces before and after <>&       */
+    cmdLine = RemoveWhitespace(cmdLine);                /* Remove leading/trailing whitespace    */
+    
+    if (CheckCommand(cmdLine, &isBg)) return 0;         /* Check for invalid character placement */
+    Cmds = Pipes2Arrays(cmdLine);                       /* Breakup command into  *array[][]      */
+    
+    if (Cmds[0] == NULL)              return 0;         /* Return if nothing in command line     */
+    if (!strcmp(Cmds[0][0], "exit"))  return 1;         /* 'exit' forces main loop to break      */
+    
+    if (!strcmp(Cmds[0][0], "cd"))                      /* If first command = "cd"               */
+        CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]));   /* cd and print + completed message      */
+    
+    else if (!strcmp(Cmds[0][0], "pwd"))                /* If first command = "pwd"              */
+        CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]));   /* pwd & print + completed message       */
+    
+    else {                                              /* Otherwise, try executing the program  */
+        P = AddProcess(processList, fork(), cmdCopy, isBg, SI);
+        switch(P->PID) {
+            case -1:                                    /* fork() failed                          */
+                perror("fork");                         /* Report the error                       */
+                return EXIT_FAILURE;                    /* Force main loop to break               */
+            case 0:                                     /* Child Process                          */
+                ExecProgram((char ***)Cmds, 0, P);      /* Execute recursive piping               */
+            default:                                    /* Parent Process (PID > 0)               */
+                Wait4Me(P);                             /* Wait w/ blocking or non-blcoking       */
+        }
+    }
+    return 0;
 }
 /* **************************************************** */
 
