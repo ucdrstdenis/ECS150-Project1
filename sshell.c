@@ -30,6 +30,22 @@ void ChildSignalHandler(int signum)
 /* **************************************************** */
 
 /* **************************************************** */
+/* Executes blocking or nonblocking wait()              */
+/* **************************************************** */
+void Wait4Me(Process *Me)
+{
+    int status;
+    if (Me->isBG) {                                     /* If it's to be run in background        */
+        waitpid(Me->PID, &status, WNOHANG);             /* Non-blocking call to waitpid           */
+        Me->status = xStat(status);                     /* Set the temporary status               */
+    } else {                                            /* Otherwise                              */
+        waitpid(Me->PID, &status, 0);                   /* wait for child to exit                 */
+        MarkProcessDone(processList, Me->PID, xStat(status));
+    }
+}
+/* **************************************************** */
+
+/* **************************************************** */
 /* Change Directory Command  (handles cd)               */
 /* **************************************************** */
 char ChangeDir(char *args[])
@@ -100,9 +116,6 @@ char **Cmd2Array(char *cmd)
 /*                     Example  2                       */
 /* "ls -la" -> {args0, NULL}                            */
 /* where args0 = {"ls", "-la", NULL}                    */
-/*                     Example  3                       */
-/* "ls -la>outfile" -> {args0, NULL}                    */
-/* where args0 = {"ls", "-la", ">", "outfile", NULL}    */
 /* **************************************************** */
 char ***Pipes2Arrays(char *cmd)
 {
@@ -127,25 +140,8 @@ char ***Pipes2Arrays(char *cmd)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Function to execute blocking or nonblocking wait()   */
-/* **************************************************** */
-void Wait4Me(Process *Me)
-{
-    int status;
-    if (Me->isBG) {                                      /* If it's to be run in background        */
-        waitpid(Me->PID, &status, WNOHANG);              /* Non-blocking call to waitpid           */
-        Me->status = xStat(status);                      /* Set the temporary status               */
-    } else {                                             /* Otherwise                              */
-        waitpid(Me->PID, &status, 0);                    /* wait for child to exit                 */
-        MarkProcessDone(processList, Me->PID, xStat(status));
-    }
-}
-/* **************************************************** */
-
-/* **************************************************** */
 /* Function to execute program commands                 */
 /* If function is piped, execProgram() is recursive     */
-/* See 'recursive-piping' reference                     */
 /* **************************************************** */
 void ExecProgram(char **cmds[], int N, Process *P)
 {
