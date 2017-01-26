@@ -339,10 +339,11 @@ mainLoop:                                                /* Shell main loop labe
                 AddHistory(history, cmdLine, cursorPos);
                 if((tryExit = RunCommand(cmdLine)))
                     keepRunning = 0;                     /* Stop the main loop if 'exit' received */
-                else                                    
+                else {                                    
                     CheckCompletedProcesses(processList);          
                     DisplayPrompt(&cursorPos);       
-                break;
+		}                
+		break;
         
             default:                                     /* ANY OTHER KEY */
                 if (cursorPos < MAX_BUFFER) {            /* Make sure there's room in the buffer */
