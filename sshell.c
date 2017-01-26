@@ -160,6 +160,7 @@ char ***Pipes2Arrays(char *cmd, char *numPipes)
         pipes[i++] = Cmd2Array(cmd);                    /* Add them to the array                                */
          
     pipes[i] = NULL;                                    /* Set the last entry to be NULL                        */
+    *numPipes = i-1;                                    /* Number of Pipes in commmand + 1                      */
     return pipes;                                       /* Return the pointer                                   */
 }
 /* **************************************************** */
@@ -171,7 +172,7 @@ char ***Pipes2Arrays(char *cmd, char *numPipes)
 void ExecProgram(char **cmds[], int N, Process *P)
 {
     if (cmds[N+1] == NULL) {                            /* If there's only 1 command in the array   */
-        Dup2AndClose(P->fdIn, SI);                      /* Read from fdIn                           */
+        Dup2AndClose(P->fd[0], SI);                     /* Read from fdIn                           */
         execvp(cmds[N][0], cmds[N]);                    /* Execute command                          */
         perror("execvp");                               /* Coming back here is an error             */
         exit(EXIT_FAILURE);                             /* Exit failure                             */
@@ -181,7 +182,7 @@ void ExecProgram(char **cmds[], int N, Process *P)
         Process *cP;                                    /* Pointer to new child process             */
         pipe(fdOut);                                    /* Create pipe                              */
         
-        cP = AddProcessAsChild(processList, P->PID, fork(), "\0", P->isBG, fdOut[0]);
+        cP = AddProcessAsChild(processList, P->PID, fork(), "\0", P->nPipes, P->isBG, fdOut);
         switch(cP->PID) {                               /* fork the process                         */
             case -1:                                    /* If fork fails                            */
                 perror("fork");                         /* Report the error                         */
@@ -189,7 +190,7 @@ void ExecProgram(char **cmds[], int N, Process *P)
                 
             case 0:                                     /* Child Process, writes to the pipe        */
                 close(fdOut[0]);                        /* Don't need to read from pipe             */
-                Dup2AndClose(P->fdIn, SI);              /* Link Input file descriptor to the pipe   */
+                Dup2AndClose(P->fd[0], SI);              /* Link Input file descriptor to the pipe   */
                 Dup2AndClose(fdOut[1], SO);             /* Link output file descripter to STDOUT    */
                 //cmds[N][0] = SearchPath(cmds[N][0]);  /* Replace with full PATH to binary name    */
                 execvp(cmds[N][0], cmds[N]);            /* Execute the command                      */
@@ -198,7 +199,7 @@ void ExecProgram(char **cmds[], int N, Process *P)
                 
             default:                                    /* Parent Process, reads from the  pipe     */
                 close(fdOut[1]);                        /* Don't need to write to pipe              */
-                close(P->fdIn);                         /* Close existing input file descriptor     */
+                close(P->fd[0]);                        /* Close existing input file descriptor     */
                 Wait4Me(cP);                            /* Blocking or non-blocking wait            */
                 ExecProgram(cmds, N+1, cP);             /* Execute the first command in the array   */
         }
@@ -246,8 +247,7 @@ char RunCommand(char *cmdLine)
     //    i++; 
 	//}
 
-
-        P = AddProcess(processList, fork(), cmdCopy, isBg, SI);
+        P = AddProcess(processList, fork(), cmdCopy, numPipes, isBg, NULL);
         switch(P->PID) {
             case -1:                                    /* fork() failed                          */
                 perror("fork");                         /* Report the error                       */
@@ -260,6 +260,12 @@ char RunCommand(char *cmdLine)
     }
     return 0;                                           /* Continue main loop                     */
 }
+/* **************************************************** */
+
+/* **************************************************** */
+/* Setup Redirects                                      */
+/* **************************************************** */
+
 /* **************************************************** */
 
 /* **************************************************** */

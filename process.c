@@ -1,5 +1,14 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/types.h>
 
 /* **************************************************** */
 /*              User - defined .h files                 */
@@ -11,20 +20,28 @@
 /* **************************************************** */
 /* Add a process to the list of running processes       */
 /* **************************************************** */
-Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char isBG, int fdIn)
+Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char nPipes, char isBG, int *fd)
 {
     Process *proc = (Process*) malloc(sizeof(Process));
-    proc->cmd     = (char*) malloc(strlen(cmd)+1);
-    proc->PID     = PID;
-    proc->status  = 0;
-    proc->running = 1;
-    proc->isBG    = isBG;
-    proc->fdIn    = fdIn;
-    proc->child   = NULL;
-    proc->parent  = NULL;                               /* @TODO This should be set to the main shell PID */
-    strcpy(proc->cmd, cmd);
+    proc->cmd     = (char*) malloc(strlen(cmd)+1);      /* Alloc space for the cmd                  */
+    proc->PID     = PID;                                /* Set the PID                              */
+    proc->status  = 0;                                  /* exit code                                */
+    proc->running = 1;		 			                /* 1 if running, 0 if complete              */
+    proc->isBG    = isBG;                               /* 1 if background command, 0 otherwise     */
+    proc->nPipes  = nPipes;                             /* Number of pipes in the command           */
+    proc->child   = NULL;	                            /* NULL if no children processes            */
+    proc->parent  = NULL;                               /* @TODO Should be set to main shell PID    */
+    strcpy(proc->cmd, cmd);                             /* copy the command string                  */
     
-    if (pList->count == 0) {
+    if (fd == NULL){                                    /* Setup the I/O file descriptors           */
+        proc->fd[0] = STDIN_FILENO;
+        proc->fd[1] = STDOUT_FILENO;
+    } else {
+        proc->fd[0] = fd[0];
+        proc->fd[1] = fd[1];
+    }
+
+    if (pList->count == 0) {                            /* Setup pointer to the next process in list    */
         proc->next = NULL;
         pList->top = proc;
     } else {
@@ -39,9 +56,9 @@ Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char isBG, int fdI
 /* **************************************************** */
 /* Add a process as a child of another processs         */
 /* **************************************************** */
-Process *AddProcessAsChild(ProcessList *pList, pid_t pPID, pid_t cPID, char *cmd, char isBG, int fdIn)
+Process *AddProcessAsChild(ProcessList *pList, pid_t pPID, pid_t cPID, char *cmd, char nPipes, char isBG, int *fd)
 {
-    Process *child = (Process*) AddProcess(pList, cPID, cmd, isBG, fdIn);
+    Process *child = (Process*) AddProcess(pList, cPID, cmd, nPipes, isBG, fd);
     Process *parent = pList->top;
     while (parent != NULL) {
         if (parent->PID == pPID) {
