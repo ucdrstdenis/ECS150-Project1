@@ -71,13 +71,31 @@ char ChangeDir(char *args[])
 char PrintWDir(char *args[])
 {
     char workingDir[MAX_BUFFER];
+    int fd;                                             /* File descriptor */
     getcwd(workingDir, MAX_BUFFER);                     /* Write working directory into workingDir */
     sprintf(workingDir, "%s\n", workingDir);            /* Add a new line character                */
-    write(STDOUT_FILENO, workingDir, strlen(workingDir));
-
-    // @TODO search through args[] and setup output redirect if necesary
-
-    return 0;
+    
+    // DEBUGGING
+    char debug[MAX_BUFFER];
+    int i = 0;
+    while(args[i] != NULL) {
+        sprintf(debug, "Args[%d] = %s", i, args[i]);
+        ThrowError(debug);
+        i++;
+    }
+    
+    if (args[1]==NULL) {                                /* If the first argument == >, set out fd   */
+        write(STDOUT_FILENO, workingDir, strlen(workingDir));
+        return 0;
+    }
+    if (!strcmp(args[1], ">") && args[2] != NULL) {
+        fd = open(args[2], O_CREAT | O_TRUNC | O_WRONLY, 0600);
+        write(fd, workingDir, strlen(workingDir));
+        return 0;
+    } else {
+        ThrowError("Error: invalid argument to pwd");
+        return 1;
+    }
 }
 /* **************************************************** */
 
@@ -212,7 +230,7 @@ char RunCommand(char *cmdLine)
         CompleteCmd(cmdCopy, ChangeDir(&Cmds[0][1]));   /* cd and print + completed message      */
     
     else if (!strcmp(Cmds[0][0], "pwd"))                /* If first command = "pwd"              */
-        CompleteCmd(cmdCopy, PrintWDir(&Cmds[0][1]));   /* pwd & print + completed message       */
+        CompleteCmd(cmdCopy, PrintWDir(Cmds[0]));       /* pwd & print + completed message       */
     
     else {                                              /* Otherwise, try executing the program  */
         P = AddProcess(processList, fork(), cmdCopy, isBg, SI);
