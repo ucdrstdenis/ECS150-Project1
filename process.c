@@ -2,14 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <sys/types.h>
-
 /* **************************************************** */
 /*              User - defined .h files                 */
 /* **************************************************** */
@@ -31,16 +23,10 @@ Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char nPipes, char 
     proc->nPipes  = nPipes;                             /* Number of pipes in the command           */
     proc->child   = NULL;	                            /* NULL if no children processes            */
     proc->parent  = NULL;                               /* @TODO Should be set to main shell PID    */
+    proc->fd[0]   = fd[0];                              /* Input file descriptor                    */
+    proc->fd[1]   = fd[1];                              /* Output file descriptor                   */
     strcpy(proc->cmd, cmd);                             /* copy the command string                  */
-    
-    if (fd == NULL){                                    /* Setup the I/O file descriptors           */
-        proc->fd[0] = STDIN_FILENO;
-        proc->fd[1] = STDOUT_FILENO;
-    } else {
-        proc->fd[0] = fd[0];
-        proc->fd[1] = fd[1];
-    }
-
+   
     if (pList->count == 0) {                            /* Setup pointer to the next process in list    */
         proc->next = NULL;
         pList->top = proc;
@@ -56,19 +42,13 @@ Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char nPipes, char 
 /* **************************************************** */
 /* Add a process as a child of another processs         */
 /* **************************************************** */
-Process *AddProcessAsChild(ProcessList *pList, pid_t pPID, pid_t cPID, char *cmd, char nPipes, char isBG, int *fd)
+Process *AddProcessAsChild(ProcessList *pList, Process *Parent, pid_t cPID, char *cmd, char nPipes, char isBG, int *fd)
 {
     Process *child = (Process*) AddProcess(pList, cPID, cmd, nPipes, isBG, fd);
-    Process *parent = pList->top;
-    while (parent != NULL) {
-        if (parent->PID == pPID) {
-            parent->child = child;
-            child->parent = parent;
-            return child;
-        }
-        parent = parent->next;
-    }
-    return NULL;
+    pList->count--;                                     /* Don't let child processes affect the count */
+    Parent->child = child;
+    child->parent = Parent;
+    return child;
 }
 /* **************************************************** */
 
@@ -78,22 +58,22 @@ Process *AddProcessAsChild(ProcessList *pList, pid_t pPID, pid_t cPID, char *cmd
 /* **************************************************** */
 void CheckCompletedProcesses(ProcessList *pList)
 {
-    Process *current = pList->top;
-    Process *previous = NULL;
+    Process *curr = pList->top;
+    Process *prev = NULL;
     
-    while (current != NULL) {                           /* Iterate through the list 	*/
-        if (current->running == 0) {                    /* If process has completed 	*/
-            CompleteCmd(current->cmd, current->status); /* Print completed message 	    */
-	        if (previous == NULL)                       /* Prepare to delete the node 	*/
-                pList->top = current->next;
+    while (curr != NULL) {                             /* Iterate through the list 	   */
+        if ((curr->running==0)&&(curr->parent==NULL)){ /* If process completed         */
+            CompleteCmd(curr->cmd, curr->status);      /* Print completed message 	   */
+	        if (prev == NULL)                          /* Prepare to delete the node   */
+                pList->top = curr->next;
 	        else
-                previous->next = current->next;	      
-	        free(current);                              /* Delete the node              */	
-            pList->count--;                             /* Decrement the process count  */		
-	        break;                                      /* Break from the loop          */
+                prev->next = curr->next;	      
+	        free(curr);                                /* Delete the node              */	
+            pList->count--;                            /* Decrement the process count  */		
+	        break;                                     /* Break from the loop          */
         }   
-	    previous = current;
-        current = current->next;  
+	    prev = curr;
+        curr = curr->next;  
     }
 }
 /* **************************************************** */

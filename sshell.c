@@ -37,22 +37,6 @@ void ChildSignalHandler(int signum)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Executes blocking or nonblocking wait()              */
-/* **************************************************** */
-void Wait4Me(Process *Me)
-{
-    int status;
-    if (Me->isBG) {                                     /* If it's to be run in background        */
-        waitpid(Me->PID, &status, WNOHANG);             /* Use non-blocking call to waitpid       */
-        Me->status = xStat(status);                     /* Set the temporary status               */
-    } else {                                            /* Otherwise                              */
-        waitpid(Me->PID, &status, 0);                   /* wait for child to exit                 */
-        MarkProcessDone(processList, Me->PID, xStat(status));
-    }
-}
-/* **************************************************** */
-
-/* **************************************************** */
 /* Change Directory Command  (handles cd)               */
 /* **************************************************** */
 char ChangeDir(char *args[])
@@ -71,25 +55,17 @@ char ChangeDir(char *args[])
 char PrintWDir(char *args[])
 {
     char workingDir[MAX_BUFFER];
-    int fd;                                             /* File descriptor */
-    getcwd(workingDir, MAX_BUFFER);                     /* Write working directory into workingDir */
-    sprintf(workingDir, "%s\n", workingDir);            /* Add a new line character                */
-    
-    // DEBUGGING
-    char debug[MAX_BUFFER];
-    int i = 0;
-    while(args[i] != NULL) {
-        sprintf(debug, "Args[%d] = %s", i, args[i]);
-        ThrowError(debug);
-        i++;
-    }
-    
-    if (args[1]==NULL) {                                /* If the first argument == >, set out fd   */
+    int fd;                                             /* File descriptor                          */
+    getcwd(workingDir, MAX_BUFFER);                     /* Write working directory into workingDir  */
+    sprintf(workingDir, "%s\n", workingDir);            /* Add a new line character                 */
+   
+    if (args[1]==NULL) {                                /* If no additional args, wrtie to STDOUT   */
         write(STDOUT_FILENO, workingDir, strlen(workingDir));
         return 0;
     }
-    if (!strcmp(args[1], ">") && args[2] != NULL) {
-        fd = open(args[2], O_CREAT | O_TRUNC | O_WRONLY, 0600); /* (filename,Access mode, premissions) */
+
+    if (!strcmp(args[1], ">") && args[2] != NULL) {     /* If the first argument is '>', set out fd */
+        fd = open(args[2], WMODE);                      /* (filename,Access mode, premissions)      */
         write(fd, workingDir, strlen(workingDir));
         return 0;
     } else {
@@ -100,10 +76,9 @@ char PrintWDir(char *args[])
 /* **************************************************** */
 
 /* **************************************************** */
-/* Breaks up a command into a NULL terminated           */ 
-/* dynamically allocated array.                         */
+/* Breaks up a command into a NULL terminated array.    */
 /*                                                      */
-/*"ls -l -a" -> {"ls","-l","-a", NULL};                 */
+/* cmd = "ls -l -a" returns {"ls","-l","-a", NULL};     */
 /* **************************************************** */
 char **Cmd2Array(char *cmd)
 {
@@ -130,7 +105,6 @@ char **Cmd2Array(char *cmd)
     return args;
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Breaks up  a command into dynamically allocated      */
 /* 2D array of command pointers.                        */
@@ -152,7 +126,7 @@ char ***Pipes2Arrays(char *cmd, char *numPipes)
     while(bar != NULL) {                                /* Repeat until no more '|' found or max tokens reached */
         *bar = '\0';                                    /* Replace '|' with '\0                                 */
         pipes[i++] = Cmd2Array(cmd);                    /* Put the cmd array into the pipes array               */
-        cmd = RemoveWhitespace(bar+1);                  /* Remove leading/trailing whitespace for remaining part the command*/
+        cmd = RemoveWhitespace(bar+1);                  /* Remove leading/trailing whitespace for rest command  */
         bar = strchr(cmd, '|');                         /* bar points to the first occurance of '|' in cmd      */
     }      
     
@@ -164,46 +138,102 @@ char ***Pipes2Arrays(char *cmd, char *numPipes)
     return pipes;                                       /* Return the pointer                                   */
 }
 /* **************************************************** */
+/* **************************************************** */
+/* Function to execute single program call              */
+/* Redirects i/o from/to Process file descriptors       */
+/* **************************************************** */
+void ExecProg(char *cmds[], Process *P)
+{
+    Dup2AndClose(P->fd[0], STDIN_FILENO);               /* Read from fd[0]                          */
+    Dup2AndClose(P->fd[1], STDOUT_FILENO);              /* Write to fd[1]                           */
+    execvp(cmds[0], cmds);                              /* Execute command                          */
+    perror("execvp");                                   /* Report an error if code gets here        */
+    exit(EXIT_FAILURE);                                 /* Exit with  failure                       */
+}
+/* **************************************************** */
+/* **************************************************** */
+/* Executes blocking or nonblocking wait()              */
+/* **************************************************** */
+void Wait4Me(Process *Me)
+{
+    int status;
+    if (Me->isBG) {                                     /* If it's to be run in background        */
+        waitpid(Me->PID, &status, WNOHANG);             /* Use non-blocking call to waitpid       */
+        Me->status = xStat(status);                     /* Set the temporary status               */
+    } else {                                            /* Otherwise                              */
+        waitpid(Me->PID, &status, 0);                   /* wait for child to exit                 */
+        MarkProcessDone(processList, Me->PID, xStat(status));
+    }
+}
+/* **************************************************** */
 
 /* **************************************************** */
-/* Function to execute program commands                 */
-/* If function is piped, execProgram() is recursive     */
+/* Forks a process. Child executes, parent waits        */
 /* **************************************************** */
-void ExecProgram(char **cmds[], int N, Process *P)
+void ForkMe(char *cmds[], Process *Me)
 {
-    if (cmds[N+1] == NULL) {                            /* If there's only 1 command in the array   */
-        Dup2AndClose(P->fd[0], SI);                     /* Read from fdIn                           */
-        execvp(cmds[N][0], cmds[N]);                    /* Execute command                          */
-        perror("execvp");                               /* Coming back here is an error             */
-        exit(EXIT_FAILURE);                             /* Exit failure                             */
-        
-    } else {
-        int fdOut[2];                                   /* Create file descriptors                  */
-        Process *cP;                                    /* Pointer to new child process             */
-        pipe(fdOut);                                    /* Create pipe                              */
-        
-        cP = AddProcessAsChild(processList, P->PID, fork(), "\0", P->nPipes, P->isBG, fdOut);
-        switch(cP->PID) {                               /* fork the process                         */
-            case -1:                                    /* If fork fails                            */
-                perror("fork");                         /* Report the error                         */
-                exit(EXIT_FAILURE);                     /* Exit with failure                        */
-                
-            case 0:                                     /* Child Process, writes to the pipe        */
-                close(fdOut[0]);                        /* Don't need to read from pipe             */
-                Dup2AndClose(P->fd[0], SI);              /* Link Input file descriptor to the pipe   */
-                Dup2AndClose(fdOut[1], SO);             /* Link output file descripter to STDOUT    */
-                //cmds[N][0] = SearchPath(cmds[N][0]);  /* Replace with full PATH to binary name    */
-                execvp(cmds[N][0], cmds[N]);            /* Execute the command                      */
-                perror("execvp");                       /* Coming back here is an error             */
-                exit(EXIT_FAILURE);                     /* Exit failure                             */
-                
-            default:                                    /* Parent Process, reads from the  pipe     */
-                close(fdOut[1]);                        /* Don't need to write to pipe              */
-                close(P->fd[0]);                        /* Close existing input file descriptor     */
-                Wait4Me(cP);                            /* Blocking or non-blocking wait            */
-                ExecProgram(cmds, N+1, cP);             /* Execute the first command in the array   */
-        }
+    Me->PID = fork();                                   /* Fork the process, set the PID          */
+    switch(Me->PID) {                                   /* Switch statemnt on PID                 */
+        case -1:                                        /* -1 means fork() failed                 */
+            perror("fork");                             /* Report the error                       */
+            exit(EXIT_FAILURE);                         /* fork failed, kill the process          */
+        case 0:                                         /* Child Process                          */
+            ExecProg(cmds, Me);                         /* Execute the program                    */
+        default:                                        /* Parent Process (PID > 0)               */
+            if (Me->fd[0] != SI) close(Me->fd[0]);      /* Parent closes the read pipes           */
+            if (Me->fd[1] != SO) close(Me->fd[1]);      /* Parent closes the write pipe           */
+            Wait4Me(Me);                                /* Wait w/ blocking or non-blcoking       */
     }
+}
+/* **************************************************** */
+
+/* **************************************************** */
+/* Execute program commands, looped if they are piped   */
+/* **************************************************** */
+char ExecProgram(char **cmds[], Process *P)
+{
+    Process *Me, *cP, *cP2;                             /* Pointers to process structures       */
+    int N = 0;                                          /* Pipe iterator                        */         
+    int firstPipe[2];                                   /* FD for chaining pipes together       */
+    int secPipe[2];                                     /* FD for chaining pipes togetehr       */
+    int *myPipe;                                        /* Pointer that points to 1 of 2 pipes  */
+    Me = P;                                             /* Me points to the parent in the chain */
+    while ((cmds[N+1] != NULL) && cmds[N+2] != NULL) {  /* While pipes to chain together exist  */
+         cP = AddProcessAsChild(processList, Me, 1, "\0", Me->nPipes-1, Me->isBG, Me->fd);
+
+        /* Setup Pipes from P1 to P2 */
+        if (CheckRedirect(cmds, cP, N)) return 1;       /* Setup redirects, check against pipes */
+        pipe(firstPipe);                                /* Create the Pipe                      */
+        cP->fd[1] = firstPipe[1];                       /* Child will write to the pipe         */
+        ForkMe(cmds[N++], cP);                          /* Fork the process, exec, close & wait */
+        
+        /* Setup Pipes from P2 to P3 */
+        cP2 = AddProcessAsChild(processList, cP, 1, "\0", cP->nPipes-1, cP->isBG, cP->fd);
+        if (CheckRedirect(cmds, cP2, N)) return 1;      /* Setup redirects, check against pipes */
+        pipe(secPipe);                                  /* Create the Pipe                      */
+        cP2->fd[0] = firstPipe[0];                      /* Child will read from last pipe       */
+        cP2->fd[1] = secPipe[1];                        /* but will write to the next pipe      */              
+        ForkMe(cmds[N++], cP2);                         /* Fork the process, exec, close & wait */
+
+        Me = cP2;                                       /* Parent now becomes child process 2   */
+        myPipe = secPipe;                               /* myPipe points to secPipe             */
+    }
+
+    /* Only 2 commands to pipe left */ 
+    if (cmds[N+1] != NULL) {                                          
+        cP = AddProcessAsChild(processList, Me, 1, "\0", Me->nPipes-1, Me->isBG, Me->fd);
+        if (CheckRedirect(cmds, cP, N)) return 1;       /* Setup redirects, check against pipes */
+        pipe(firstPipe);                                /* Create the Pipe                      */
+        cP->fd[1] = firstPipe[1];                       /* Child will write to the pipe         */
+        ForkMe(cmds[N++], cP);                          /* Fork the process, exec program, wait */
+        myPipe = firstPipe;                             /* myPipe points to firstPipe           */
+    } 
+
+    /* Only 1 command to left to run  */
+    if (CheckRedirect(cmds, P, N)) return 1;            /* Setup redirects, check against pipes */
+    if (N != 0)  P->fd[0] = myPipe[0];                  /* If last in a chain, get piped input  */
+    ForkMe(cmds[N], P);
+    return 0;
 }
 /* **************************************************** */
 
@@ -216,7 +246,8 @@ char RunCommand(char *cmdLine)
     Process *P;                                         /* New Process Pointer                   */
     char isBg = 0;                                      /* Flag for background commands          */
     char *cmdCopy = (char *) malloc(strlen(cmdLine)+1); /* Holds copy of the command line        */
-    char numPipes = 0;					/* # Pipes in the command (max 255)      */
+    char numPipes = 0;					                /* Num pipes in the command +1 (max 255  */
+    int fd[2] = {SI, SO};                               /* Holds I/O file descriptors            */
     
     strcpy(cmdCopy, cmdLine);                           /* Make the copy                         */
     cmdLine = InsertSpaces(cmdLine);                    /* Add spaces before and after <>&       */
@@ -234,38 +265,63 @@ char RunCommand(char *cmdLine)
     else if (!strcmp(Cmds[0][0], "pwd"))                /* If first command = "pwd"              */
         CompleteCmd(cmdCopy, PrintWDir(Cmds[0]));       /* pwd & print + completed message       */
     
-    else {                                              /* Otherwise, try executing the program  */
-	//while (Cmds[0][i] != NULL) {  
-    //    if (!strcmp(Cmds[0][i], "<")) {
-    //        ThrowError("input redirection found");
-    //        if (Cmds[0][i+1] == NULL)
-    //            return 1;
-    //        Cmds[0][i] = NULL;
-    //        fd = open(Cmds[0][i+1],   O_RDONLY);
-    //        flag = 1;
-    //    }
-    //    i++; 
-	//}
-
-        P = AddProcess(processList, fork(), cmdCopy, numPipes, isBg, NULL);
-        switch(P->PID) {
-            case -1:                                    /* fork() failed                          */
-                perror("fork");                         /* Report the error                       */
-                return EXIT_FAILURE;                    /* Force main loop to break               */
-            case 0:                                     /* Child Process                          */
-                ExecProgram((char ***)Cmds, 0, P);      /* Execute recursive piping               */
-            default:                                    /* Parent Process (PID > 0)               */
-                Wait4Me(P);                             /* Wait w/ blocking or non-blcoking       */
-        }
+    else {                                              /* Otherwise, try executing the pipes    */
+        P = AddProcess(processList, 0, cmdCopy, numPipes, isBg, fd);
+        if(ExecProgram((char ***)Cmds, P)) {            /* If this returns 1, something failed   */  
+            P->running = 0;                             /* Mark the process as done              */
+            P->status = 1;                              /* Set the failure status                */
+        } 
     }
     return 0;                                           /* Continue main loop                     */
 }
 /* **************************************************** */
 
 /* **************************************************** */
-/* Setup Redirects                                      */
+/* Sets up redirects and checks if piped                */
+/* **************************************************** */
+char CheckRedirect(char **cmds[], Process *P, int N)
+{
+    if (Redirect(cmds[N], P->fd)) return 1;             /* Bad command, return 1                */
+    if ((P->fd[0] != SI) && (N != 0))  return 1;        /* Can't have piped input and file input*/
+    if ((P->fd[1] != SO) && (cmds[N+1]!= NULL))         /* Can't have piped output and file out */ 
+        return 1;                                       /* Bad command, return 1                */
+
+    return 0;                                           /* No bad connections                   */
+}
 /* **************************************************** */
 
+/* **************************************************** */
+/* Sets up redirective file descriptors                 */
+/* Returns file descriptors via fd pointer              */
+/* Returns 0 if good command, 1 if bad command          */
+/* **************************************************** */
+char Redirect(char *args[], int *fd)
+{                                    
+    char sym;                                           /* Holds redirect character               */
+    int i = 0;                                          /* Iterator                               */        
+    fd[0] = STDIN_FILENO;                               /* Inputfile descriptor to return         */
+    fd[1] = STDOUT_FILENO;                              /* Output file descriptor to return       */
+	while (args[i++] != NULL) {                         /* Iterate through the arguments          */
+        if ((sym = Check4Special(*args[i-1]))) {        /* Check if args] = <> or &               */            
+            if (args[i] == NULL) {                      /* If no argument afer <>                 */
+               ThrowError("Error: invalid command line");             
+               return 1;                                /* Bad command, return 1                  */
+            }
+
+            args[i-1] = NULL;                           /* Replace <> with NULL to terminate arry */
+            if((sym == '>') && (fd[1] == SO))           /* If output redirect, and out fd not set */
+                fd[1] = open(args[i], WMODE);           /* Open for writing, WMODE in sshell.h    */          
+            else if ((sym == '<') && (fd[0] == SI))     /* If input redirect, and in fd not set   */
+                fd[0] = open(args[i], O_RDONLY);        /* Set the input file descriptor          */
+                                                        /* @TODO Setup catch in case this fails   */
+            else { 
+                ThrowError("Error: invalid command line");
+                return 1;                               /* Bad command, return 1                  */
+            }
+        }
+	}
+    return 0;                                           /* Good command, return 0                 */
+}
 /* **************************************************** */
 
 /* **************************************************** */

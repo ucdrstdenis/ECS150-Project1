@@ -171,40 +171,7 @@ char CheckCommand(char *cmd, char *isBackground)
     return 0;
 }
 /* **************************************************** */
-/* **************************************************** */
-/* Searches the PATH variable for the location of       */
-/* the specified program                                */
-/* Uses the first entry in PATH that has valid entry    */
-/*                                                      */
-/* NOT NEEDED IF EXECVP USED                            */
-/* Example - *PATH = /usr/bin:/opt/bin                  */
-/*           *prog = "ls"                               */
-/*           returns "/usr/bin/ls"                      */
-/* **************************************************** */
-char *SearchPath(char *prog) {
-    unsigned int len = strlen(prog);                    /* Length of the string of the passed program  */
-    char *binary  = (char *) malloc(MAX_BUFFER+len);    /* Pointer to hold the full name of the binary */
-    char *PATH = getenv("PATH");                        /* Store contents of the PATH variable         */
-    char *semi = strchr(PATH, ':');                     /* semi points to the first place ':' occurs   */
-    
-    while(semi != NULL) {                               /* Repeat until no more ':' found              */
-        *semi = '\0';                                   /* Terminate the string where ':' was          */
-        sprintf(binary, "%s/%s", PATH, prog);           /* Append the first path to binary name        */
-        if(access(binary, F_OK) != -1)                  /* If binary exists                            */
-            return binary;                              /* Return the full name of the binary          */
-        PATH = semi+1;                                  /* Update the address PATH points to           */
-        semi = strchr(PATH, ':');                       /* semi points to the next place ':' occurs    */
-    }
-    
-    sprintf(binary, "%s/%s", PATH, prog);               /* Append binary to last entry in path         */
-    if(access(binary, F_OK) != -1)                      /* If binary exists                            */
-        return binary;
-    else                                                /* If it doesn't exists                        */
-        binary = prog;                                  /* Just store the argument that was passed     */
-    
-    return binary;                                      /* Return the binary name                      */
-}
-/* **************************************************** */
+
 /* **************************************************** */
 /* Function to redirect file descriptors                */
 /* **************************************************** */
@@ -221,4 +188,84 @@ void Dup2AndClose(int old, int new)
     }
 }
 /* **************************************************** */
+
+/* **************************************************** */
+/* Searches the PATH variable for the location of       */
+/* the specified program                                */
+/* Uses the first entry in PATH that has valid entry    */
+/*                                                      */
+/* WORKS VERY WELL, BUT NOT NEEDED IF EXECVP USED       */
+/*                      * sigh *                        */
+/*                                                      */
+/* Example - *PATH = /usr/bin:/opt/bin                  */
+/*           *prog = "ls"                               */
+/*           returns "/usr/bin/ls"                      */
+/* **************************************************** */
+//char *SearchPath(char *prog) {
+//    unsigned int len = strlen(prog);                   /* Length of the string of the passed program  */
+//    char *binary  = (char *) malloc(MAX_BUFFER+len);   /* Pointer to hold the full name of the binary */
+//    char *PATH = getenv("PATH");                       /* Store contents of the PATH variable         */
+//    char *semi = strchr(PATH, ':');                    /* semi points to the first place ':' occurs   */
+//    while(semi != NULL) {                              /* Repeat until no more ':' found              */
+//        *semi = '\0';                                  /* Terminate the string where ':' was          */
+//        sprintf(binary, "%s/%s", PATH, prog);          /* Append the first path to binary name        */
+//        if(access(binary, F_OK) != -1)                 /* If binary exists                            */
+//            return binary;                             /* Return the full name of the binary          */
+//        PATH = semi+1;                                 /* Update the address PATH points to           */
+//        semi = strchr(PATH, ':');                      /* semi points to the next place ':' occurs    */
+//    }
+
+//    sprintf(binary, "%s/%s", PATH, prog);              /* Append binary to last entry in path         */
+//    if(access(binary, F_OK) != -1)                     /* If binary exists                            */
+//        return binary;
+//    else                                               /* If it doesn't exists                        */
+//        binary = prog;                                 /* Just store the argument that was passed     */
+    
+//    return binary;                                     /* Return the binary name                      */
+//}
+/* **************************************************** */
+
+/* **************************************************** */
+/* Function to execute program commands                 */
+/* If function is piped, ExecProgram() is recursive.    */
+/*                                                      */
+/* THIS WORKS GREAT!!! And does the work of 6 functions */
+/* in < 35 lines of code. But without using shared mem  */
+/* I couldn't figure out how to get the child exit      */ 
+/* status' back. Will save for another time.            */
+/* **************************************************** */
+//void ExecProgram(char **cmds[], int N, Process *P)
+//{
+//    if (cmds[N+1] == NULL) {                          /* If there's only 1 command in the array   */
+//        Dup2AndClose(P->fd[0], STDIN_FILENO);         /* Read from fd[0]                          */
+//        Dup2AndClose(P->fd[1], STDOUT_FILENO);        /* Write to fd[1]                           */
+//        execvp(cmds[N][0], cmds[N]);                  /* Execute command                          */
+//        perror("execvp");                             /* Coming back here is an error             */
+//        exit(EXIT_FAILURE);                           /* Exit failure                             */       
+//    } else {
+//        int fdOut[2];                                 /* Create file descriptors                  */
+//        Process *cP;                                  /* Pointer to new child process             */
+//        pipe(fdOut);                                  /* Create pipe                              */
+//        cP = AddProcessAsChild(processList, P->PID, fork(), "\0", P->nPipes, P->isBG, fdOut);
+//        switch(cP->PID) {                             /* fork the process                         */
+//            case -1:                                  /* If fork fails                            */
+//                perror("fork");                       /* Report the error                         */
+//                exit(EXIT_FAILURE);                   /* Exit with failure                        */
+//            case 0:                                   /* Child Process, writes to the pipe        */
+//                close(fdOut[0]);                      /* Don't need to read from pipe             */
+//                Dup2AndClose(P->fd[0], SI);           /* Link Input file descriptor to the pipe   */
+//                Dup2AndClose(fdOut[1], SO);           /* Link output file descripter to STDOUT    */
+//                execvp(cmds[N][0], cmds[N]);          /* Execute the command                      */
+//                perror("execvp");                     /* Coming back here is an error             */
+//                exit(EXIT_FAILURE);                   /* Exit failure                             */
+//            default:                                  /* Parent Process, reads from the  pipe     */
+//                close(fdOut[1]);                      /* Don't need to write to pipe              */
+//                close(P->fd[0]);                      /* Close existing input file descriptor     */
+//                Wait4Me(cP);                          /* Blocking or non-blocking wait            */
+//                ExecProgram(cmds, N+1, cP);           /* Execute the first command in the array   */
+//        }
+//    }
+//}
+/* **************************************************** */
+
 
