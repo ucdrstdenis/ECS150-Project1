@@ -14,7 +14,7 @@ char RunCommand (char *cmdLine);                    	/* Wrapper to execute whate
 void ExecProgram(char **cmds[], int N, Process *P);     /* Execute program commands, recursive if piped       	*/
 void Wait4Me(Process *Me);                              /* Executes blocking or non-blocking wait               */
 char **Cmd2Array (char *cmd);                       	/* Breaks up  a command into an array of arguments      */
-char ***Pipes2Array (char *cmd);                    	/* Breaks up command into arrays of piped arguments     */
+char ***Pipes2Array (char *cmd, char *numPipes);        /* Breaks up command into arrays of piped arguments     */
 /* **************************************************** */
 
 #endif

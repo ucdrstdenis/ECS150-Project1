@@ -133,7 +133,7 @@ char **Cmd2Array(char *cmd)
 
 /* **************************************************** */
 /* Breaks up  a command into dynamically allocated      */
-/* 2D array of command pointers                         */
+/* 2D array of command pointers.                        */
 /*                     Example  1                       */
 /* "ls -la|grep filename" -> {args0, args1, NULL}       */
 /* where args0 = {"ls", "-la", NULL}                    */
@@ -142,7 +142,7 @@ char **Cmd2Array(char *cmd)
 /* "ls -la" -> {args0, NULL}                            */
 /* where args0 = {"ls", "-la", NULL}                    */
 /* **************************************************** */
-char ***Pipes2Arrays(char *cmd)
+char ***Pipes2Arrays(char *cmd, char *numPipes)
 {
     unsigned int i = 0;
     char ***pipes =  (char ***) malloc(MAX_TOKENS * sizeof(char**));
@@ -215,13 +215,14 @@ char RunCommand(char *cmdLine)
     Process *P;                                         /* New Process Pointer                   */
     char isBg = 0;                                      /* Flag for background commands          */
     char *cmdCopy = (char *) malloc(strlen(cmdLine)+1); /* Holds copy of the command line        */
+    char numPipes = 0;					/* # Pipes in the command (max 255)      */
     
     strcpy(cmdCopy, cmdLine);                           /* Make the copy                         */
     cmdLine = InsertSpaces(cmdLine);                    /* Add spaces before and after <>&       */
     cmdLine = RemoveWhitespace(cmdLine);                /* Remove leading/trailing whitespace    */
     
     if (CheckCommand(cmdLine, &isBg)) return 0;         /* Check for invalid character placement */
-    Cmds = Pipes2Arrays(cmdLine);                       /* Breakup command into  *array[][]      */
+    Cmds = Pipes2Arrays(cmdLine, &numPipes);            /* Breakup command into  *array[][]      */
     
     if (Cmds[0] == NULL)              return 0;         /* Return if nothing in command line     */
     if (!strcmp(Cmds[0][0], "exit"))  return 1;         /* 'exit' forces main loop to break      */
@@ -233,6 +234,19 @@ char RunCommand(char *cmdLine)
         CompleteCmd(cmdCopy, PrintWDir(Cmds[0]));       /* pwd & print + completed message       */
     
     else {                                              /* Otherwise, try executing the program  */
+	//while (Cmds[0][i] != NULL) {  
+    //    if (!strcmp(Cmds[0][i], "<")) {
+    //        ThrowError("input redirection found");
+    //        if (Cmds[0][i+1] == NULL)
+    //            return 1;
+    //        Cmds[0][i] = NULL;
+    //        fd = open(Cmds[0][i+1],   O_RDONLY);
+    //        flag = 1;
+    //    }
+    //    i++; 
+	//}
+
+
         P = AddProcess(processList, fork(), cmdCopy, isBg, SI);
         switch(P->PID) {
             case -1:                                    /* fork() failed                          */
