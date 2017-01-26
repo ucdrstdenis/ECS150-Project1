@@ -25,14 +25,9 @@ void ChildSignalHandler(int signum)
 {
     pid_t PID;
     int status = 0;
-    //char debug[MAX_BUFFER];
-    while ((PID = waitpid(-1, &status, WNOHANG)) > 0){    /* Allow multiple child processes to terminate if necessary */
-    //    sprintf(debug, "DEBUG: PID returned=%d, status returned=%d",xStat(status));
-    //    ThrowError(debug);
+    while ((PID = waitpid(-1, &status, WNOHANG)) > 0){   /* Allow multiple child processes to terminate if necessary  */
         MarkProcessDone(processList, PID, xStat(status));/* Mark the process as completed                             */
     }
-    //sprintf(debug, "DEBUG: status returned=%d",xStat(status));
-    //ThrowError(debug);
 }
 /* **************************************************** */
 
