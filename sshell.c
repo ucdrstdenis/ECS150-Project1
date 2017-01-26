@@ -89,7 +89,7 @@ char PrintWDir(char *args[])
         return 0;
     }
     if (!strcmp(args[1], ">") && args[2] != NULL) {
-        fd = open(args[2], O_CREAT | O_TRUNC | O_WRONLY, 0600);
+        fd = open(args[2], O_CREAT | O_TRUNC | O_WRONLY, 0600); /* (filename,Access mode, premissions) */
         write(fd, workingDir, strlen(workingDir));
         return 0;
     } else {
