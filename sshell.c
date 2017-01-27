@@ -17,11 +17,10 @@
 #include "noncanmode.h"                                 /* Slightly modifiedd version of Joel's file      */
 #include "sshell.h"                                     /* Function prototypes for sshell.c functions     */
 /* **************************************************** */
-
 /* **************************************************** */
 /* SIGCHDL Signal Handler                               */
 /* **************************************************** */
-void ChildSignalHandler(int signum)
+static void ChildSignalHandler(int signum)
 {
     pid_t PID;
     int status;
@@ -30,7 +29,6 @@ void ChildSignalHandler(int signum)
         MarkProcessDone(processList,PID,xStat(status)); /* Mark the process as completed                  */
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Change Directory Command  (handles cd)               */
 /* **************************************************** */
@@ -43,7 +41,6 @@ char ChangeDir(char *args[])
     return 0;                                           /* Otherwise return error code 0        */
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Print Working Directory  (handles pwd)               */
 /* **************************************************** */
@@ -69,7 +66,6 @@ char PrintWDir(char *args[])
     }
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Breaks up a command into a NULL terminated array.    */
 /*                                                      */
@@ -139,11 +135,11 @@ char ***Pipes2Arrays(char *cmd, char *numPipes)
 /* **************************************************** */
 void ExecProg(char *cmds[], Process *P)
 {
-    Dup2AndClose(P->fd[0], STDIN_FILENO);               /* Read from fd[0]                          */
-    Dup2AndClose(P->fd[1], STDOUT_FILENO);              /* Write to fd[1]                           */
-    execvp(cmds[0], cmds);                              /* Execute command                          */
-    perror("execvp");                                   /* Report an error if code gets here        */
-    exit(EXIT_FAILURE);                                 /* Exit with  failure                       */
+    Dup2AndClose(P->fd[0], STDIN_FILENO);               /* Read from fd[0]                       */
+    Dup2AndClose(P->fd[1], STDOUT_FILENO);              /* Write to fd[1]                        */
+    execvp(cmds[0], cmds);                              /* Execute command                       */
+    perror("execvp");                                   /* Report an error if code gets here     */
+    exit(EXIT_FAILURE);                                 /* Exit with  failure                    */
 }
 /* **************************************************** */
 /* **************************************************** */
@@ -152,11 +148,11 @@ void ExecProg(char *cmds[], Process *P)
 void Wait4Me(Process *Me)
 {
     int status;
-    if (Me->isBG) {                                     /* If it's to be run in background        */
-        waitpid(Me->PID, &status, WNOHANG);             /* Use non-blocking call to waitpid       */
-        Me->status = xStat(status);                     /* Set the temporary status               */
-    } else {                                            /* Otherwise                              */
-        waitpid(Me->PID, &status, 0);                   /* wait for child to exit                 */	
+    if (Me->isBG) {                                     /* If it's to be run in background       */
+        waitpid(Me->PID, &status, WNOHANG);             /* Use non-blocking call to waitpid      */
+        Me->status = xStat(status);                     /* Set the temporary status              */
+    } else {                                            /* Otherwise                             */
+        waitpid(Me->PID, &status, 0);                   /* wait for child to exit                */
         MarkProcessDone(processList, Me->PID, xStat(status));
     }
 }
@@ -166,17 +162,17 @@ void Wait4Me(Process *Me)
 /* **************************************************** */
 void ForkMe(char *cmds[], Process *Me)
 {
-    Me->PID = fork();                                   /* Fork the process, set the PID          */
-    switch(Me->PID) {                                   /* Switch statemnt on PID                 */
-        case -1:                                        /* -1 means fork() failed                 */
-            perror("fork");                             /* Report the error                       */
-            exit(EXIT_FAILURE);                         /* fork failed, kill the process          */
-        case 0:                                         /* Child Process                          */
-            ExecProg(cmds, Me);                         /* Execute the program                    */
-        default:                                        /* Parent Process (PID > 0)               */
-            if (Me->fd[0] != SI) close(Me->fd[0]);      /* Parent closes the read pipes           */
-            if (Me->fd[1] != SO) close(Me->fd[1]);      /* Parent closes the write pipe           */
-            Wait4Me(Me);                                /* Wait w/ blocking or non-blcoking       */
+    Me->PID = fork();                                   /* Fork the process, set the PID         */
+    switch(Me->PID) {                                   /* Switch statemnt on PID                */
+        case -1:                                        /* -1 means fork() failed                */
+            perror("fork");                             /* Report the error                      */
+            exit(EXIT_FAILURE);                         /* fork failed, kill the process         */
+        case 0:                                         /* Child Process                         */
+            ExecProg(cmds, Me);                         /* Execute the program                   */
+        default:                                        /* Parent Process (PID > 0)              */
+            if (Me->fd[0] != SI) close(Me->fd[0]);      /* Parent closes the read pipes          */
+            if (Me->fd[1] != SO) close(Me->fd[1]);      /* Parent closes the write pipe          */
+            Wait4Me(Me);                                /* Wait w/ blocking or non-blcoking      */
     }
 }
 /* **************************************************** */
@@ -186,31 +182,31 @@ void ForkMe(char *cmds[], Process *Me)
 /* **************************************************** */
 char ExecProgram(char **cmds[], Process *P)
 {
-    Process *Me, *cP, *cP2;                             /* Pointers to process structures       */
-    int N = 0;                                          /* Pipe iterator                        */         
-    int firstPipe[2];                                   /* FD for chaining pipes together       */
-    int secPipe[2];                                     /* FD for chaining pipes togetehr       */
-    int *myPipe;                                        /* Pointer that points to 1 of 2 pipes  */
-    Me = P;                                             /* Me points to the parent in the chain */
-    while ((cmds[N+1] != NULL) && cmds[N+2] != NULL) {  /* While pipes to chain together exist  */
+    Process *Me, *cP, *cP2;                             /* Pointers to process structures        */
+    int N = 0;                                          /* Pipe iterator                         */
+    int firstPipe[2];                                   /* FD for chaining pipes together        */
+    int secPipe[2];                                     /* FD for chaining pipes togetehr        */
+    int *myPipe;                                        /* Pointer that points to 1 of 2 pipes   */
+    Me = P;                                             /* Me points to the parent in the chain  */
+    while ((cmds[N+1] != NULL) && cmds[N+2] != NULL) {  /* While pipes to chain together exist   */
          cP = AddProcessAsChild(processList, Me, 1, "\0", Me->nPipes-1, Me->isBG, Me->fd);
 
         /* Setup Pipes from P1 to P2 */
-        if (CheckRedirect(cmds, cP, N)) return 1;       /* Setup redirects, check against pipes */
-        pipe(firstPipe);                                /* Create the Pipe                      */
-        cP->fd[1] = firstPipe[1];                       /* Child will write to the pipe         */
-        ForkMe(cmds[N++], cP);                          /* Fork the process, exec, close & wait */
+        if (CheckRedirect(cmds, cP, N)) return 1;       /* Setup redirects, check against pipes  */
+        pipe(firstPipe);                                /* Create the Pipe                       */
+        cP->fd[1] = firstPipe[1];                       /* Child will write to the pipe          */
+        ForkMe(cmds[N++], cP);                          /* Fork the process, exec, close & wait  */
         
         /* Setup Pipes from P2 to P3 */
         cP2 = AddProcessAsChild(processList, cP, 1, "\0", cP->nPipes-1, cP->isBG, cP->fd);
-        if (CheckRedirect(cmds, cP2, N)) return 1;      /* Setup redirects, check against pipes */
-        pipe(secPipe);                                  /* Create the Pipe                      */
-        cP2->fd[0] = firstPipe[0];                      /* Child will read from last pipe       */
-        cP2->fd[1] = secPipe[1];                        /* but will write to the next pipe      */              
-        ForkMe(cmds[N++], cP2);                         /* Fork the process, exec, close & wait */
+        if (CheckRedirect(cmds, cP2, N)) return 1;      /* Setup redirects, check against pipes  */
+        pipe(secPipe);                                  /* Create the Pipe                       */
+        cP2->fd[0] = firstPipe[0];                      /* Child will read from last pipe        */
+        cP2->fd[1] = secPipe[1];                        /* but will write to the next pipe       */
+        ForkMe(cmds[N++], cP2);                         /* Fork the process, exec, close & wait  */
 
-        Me = cP2;                                       /* Parent now becomes child process 2   */
-        myPipe = secPipe;                               /* myPipe points to secPipe             */
+        Me = cP2;                                       /* Parent now becomes child process 2    */
+        myPipe = secPipe;                               /* myPipe points to secPipe              */
     }
 
     /* Only 2 commands to pipe left */ 
@@ -269,7 +265,6 @@ char RunCommand(char *cmdLine)
     return 0;                                           /* Continue main loop                    */
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Sets up redirects and checks if piped                */
 /* **************************************************** */
@@ -287,7 +282,6 @@ char CheckRedirect(char **cmds[], Process *P, int N)
     return 0;                                           /* No bad connections                    */
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Sets up redirective file descriptors                 */
 /* Returns file descriptors via fd pointer              */
@@ -300,20 +294,20 @@ char Redirect(char *args[], int *fd)
     fd[0] = STDIN_FILENO;                               /* Inputfile descriptor to return         */
     fd[1] = STDOUT_FILENO;                              /* Output file descriptor to return       */
 	while (args[i++] != NULL) {                         /* Iterate through the arguments          */
-        if ((sym = Check4Special(*args[i-1]))) {        /* Check if args] = <> or &               */            
-            if (args[i] == NULL) {                      /* If no argument after <>                */
+        if ((sym = Check4Special(*args[i-1]))) {        /* Check if args are <> or &              */
+            if (args[i] == NULL) {                      /* If there's no argument after <>        */
                ThrowError("Error: invalid command line");             
                return 1;                                /* Bad command, return 1                  */
             }
 
-            args[i-1] = NULL;                           /* Replace <> with NULL to terminate arry */
+            args[i-1] = NULL;                           /* Replace <> with NULL, terminates array */
             if((sym == '>') && (fd[1] == SO))           /* If output redirect, and out fd not set */
-                fd[1] = open(args[i], WMODE);           /* Open for writing, WMODE in sshell.h    */          
+                fd[1] = open(args[i], WMODE);           /* Open for writing, WMODE in sshell.h    */
             else if ((sym == '<') && (fd[0] == SI))     /* If input redirect, and in fd not set   */
                 fd[0] = open(args[i], O_RDONLY);        /* Set the input file descriptor          */
-                                                        /* @TODO Setup catch in case this fails   */
+                                                        /* @TODO Setup catchs' in case open fails */
             else { 
-                ThrowError("Error: invalid command line");
+                ThrowError("Error: mislocated background sign");
                 return 1;                               /* Bad command, return 1                  */
             }
         }
@@ -373,16 +367,16 @@ mainLoop:                                                /* Shell main loop labe
         
         /* Process the keystroke */                      /* @TODO Put switch{} into keystrokeHandler()      */
         switch(keystroke) {
-            case CTRL_D:                                 /* CTRL + D */
+            case CTRL_D:                                 /*  CTRL + D   */
                 PrintNL();
                 keepRunning = 0;
                 break;
            
-            case TAB:                                    /* TAB KEY */
+            case TAB:                                    /*   TAB KEY   */
                 ErrorBell();
                 break;
             
-            case BACKSPACE:                              /* BACKSPACE */
+            case BACKSPACE:                              /*  BACKSPACE  */
                 if (cursorPos) {
                     PrintBackspace();
                     cursorPos -= 1;
@@ -391,33 +385,33 @@ mainLoop:                                                /* Shell main loop labe
                     ErrorBell();
                 break;
             
-            case ESCAPE:                                 /* ARROW KEYS */
+            case ESCAPE:                                 /* ARROW KEYS  */
                 if (GetChar() == ARROW)
                     switch(GetChar()) {
-                        case UP:                         /* UP */
+                        case UP:                         /*     UP      */
                             DisplayNextEntry(history, cmdLine, &cursorPos);
                             break;
-                        case DOWN:                       /* DOWN */
+                        case DOWN:                       /*    DOWN     */
                             DisplayPrevEntry(history, cmdLine, &cursorPos);
                             break;
-                        case LEFT:                       /* LEFT */
+                        case LEFT:                       /*    LEFT     */
                             ErrorBell();
                             break;
-                        case RIGHT:                      /* RIGHT */
+                        case RIGHT:                      /*    RIGHT    */
                             ErrorBell();
                             break;
                     }
                 break;
 
-            case RETURN:                                 /* ENTER KEY */
+            case RETURN:                                 /*  ENTER KEY  */
                 cmdLine[cursorPos] = '\0';
                 PrintNL();
                 AddHistory(history, cmdLine, cursorPos);
                 if((tryExit = RunCommand(cmdLine)))
-                    keepRunning = 0;                     /* Stop the main loop if 'exit' received */
+                    keepRunning = 0;                     /* Stop the main loop if 'exit' received           */
                 else {                                    
-                    CheckCompletedProcesses(processList);          
-                    DisplayPrompt(&cursorPos);       
+                    CheckCompletedProcesses(processList);
+                    DisplayPrompt(&cursorPos);
 		}                
 		break;
         
@@ -432,7 +426,7 @@ mainLoop:                                                /* Shell main loop labe
     
     /* **************************************************************************************************** */
     if (processList->count) {                            /* If background commands are still running        */
-        ThrowError("Error: active jobs still running") ; /* Report the error                                */
+        ThrowError("Error: active jobs still running");  /* Report the error                                */
             if(tryExit) {                                /* If command was "exit" (as opposed to Ctrl+D)    */
                 CompleteCmd("exit", 1);                  /* Print '+ completed' message                     */
                 tryExit = 0;                             /* Reset the variable                              */
@@ -448,4 +442,4 @@ mainLoop:                                                /* Shell main loop labe
     
     return EXIT_SUCCESS;
 }
-/* **************************************************** */
+/* ***************************************************** */
