@@ -12,6 +12,7 @@ typedef struct Process {                                /* Process Node         
     int status;                                         /* Completion status when process completed */
     char nPipes;					/* Number of pipes in the command           */
     int fd[2];                                          /* Input/Output file descriptor             */
+    char printMe;					/* 1 if should print '+completed' messages  */
     struct Process *next;                               /* points to next process in list           */
     struct Process *child;                              /* Points to child process if it exists     */
     struct Process *parent;                             /* Points to parent process                 */

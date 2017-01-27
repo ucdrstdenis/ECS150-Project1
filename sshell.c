@@ -42,7 +42,7 @@ char ChangeDir(char *args[])
 }
 /* **************************************************** */
 /* **************************************************** */
-/* Print Working Directory  (handles pwd)               */
+/* Print Working Directory  (pwd)                       */
 /* **************************************************** */
 char PrintWDir(char *args[])
 {
@@ -51,17 +51,16 @@ char PrintWDir(char *args[])
     getcwd(workingDir, MAX_BUFFER);                     /* Write working directory into workingDir  */
     sprintf(workingDir, "%s\n", workingDir);            /* Add a new line character                 */
    
-    if (args[1]==NULL) {                                /* If no additional args, wrtie to STDOUT   */
+    if ((args[1] == NULL || *args[1] != '>')) {         /* If no redirect args, write to STDOUT     */
         write(STDOUT_FILENO, workingDir, strlen(workingDir));
         return 0;
     }
-
-    if (!strcmp(args[1], ">") && args[2] != NULL) {     /* If the first argument is '>', set out fd */
+    if ((*args[1] == '>') && (args[2] != NULL)) {       /* If the first argument is '>', set out fd */
         fd = open(args[2], WMODE);                      /* (filename,Access mode, premissions)      */
         write(fd, workingDir, strlen(workingDir));
         return 0;
     } else {
-        ThrowError("Error: invalid argument to pwd");
+        NoOutputFile();                                 /* Error: no output file message            */
         return 1;
     }
 }
@@ -136,7 +135,7 @@ char ***Pipes2Arrays(char *cmd, char *numPipes)
 void ExecProg(char *cmds[], Process *P)
 {
     Dup2AndClose(P->fd[0], STDIN_FILENO);               /* Read from fd[0]                       */
-    Dup2AndClose(P->fd[1], STDOUT_FILENO);              /* Write to fd[1]                        */
+    Dup2AndClose(P->fd[1], STDOUT_FILENO);              /* Write  to fd[1]                       */
     execvp(cmds[0], cmds);                              /* Execute command                       */
     perror("execvp");                                   /* Report an error if code gets here     */
     exit(EXIT_FAILURE);                                 /* Exit with  failure                    */
@@ -159,6 +158,7 @@ void Wait4Me(Process *Me)
 /* **************************************************** */
 /* **************************************************** */
 /* Forks a process. Child executes, parent waits        */
+/* Also the contents of my thoughts during quizzes      */
 /* **************************************************** */
 void ForkMe(char *cmds[], Process *Me)
 {
@@ -178,7 +178,7 @@ void ForkMe(char *cmds[], Process *Me)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Execute program commands, looped if they are piped   */
+/* Execute program commands. Looped if they are piped   */
 /* **************************************************** */
 char ExecProgram(char **cmds[], Process *P)
 {
@@ -259,27 +259,28 @@ char RunCommand(char *cmdLine)
         P = AddProcess(processList, 0, cmdCopy, numPipes, isBg, fd);
         if(ExecProgram((char ***)Cmds, P)) {            /* If this returns 1, something failed   */  
             P->running = 0;                             /* Mark the process as done              */
-            P->status = 1;                              /* Set the failure status                */
+            P->status  = 1;                             /* Set the failure status                */
+	        P->printMe = 0;                             /* Don't print the '+ completed message  */
         } 
     }
     return 0;                                           /* Continue main loop                    */
 }
 /* **************************************************** */
 /* **************************************************** */
-/* Sets up redirects and checks if piped                */
+/* Sets up file redirects and checks against pipes FDs  */
 /* **************************************************** */
 char CheckRedirect(char **cmds[], Process *P, int N)
 {
     if (Redirect(cmds[N], P->fd)) return 1;             /* Bad command, return 1                 */
     if ((P->fd[0] != SI) && (N != 0)){                  /* Can't have piped input & file input   */
-        ThrowError("Error: mislocated input redirection");
-        return 1;
-    }
-    if ((P->fd[1] != SO) && (cmds[N+1]!= NULL)){        /* Can't have piped output and file out  */
-        ThrowError("Error: mislocated output redirection");
+        BadInputRedirect();                             /* Error: mislocated input redirection   */
         return 1;                                       /* Bad command, return 1                 */
     }
-    return 0;                                           /* No bad connections                    */
+    if ((P->fd[1] != SO) && (cmds[N+1]!= NULL)){        /* Can't have piped output and file out  */
+        BadOutputRedirect();                            /* Error: mislocated output redirection  */
+        return 1;                                       /* Bad command, return 1                 */
+    }
+    return 0;                                           /* No bad connections, return 0          */
 }
 /* **************************************************** */
 /* **************************************************** */
@@ -291,27 +292,36 @@ char Redirect(char *args[], int *fd)
 {                                    
     char sym;                                           /* Holds redirect character               */
     int i = 0;                                          /* Iterator                               */        
-    fd[0] = STDIN_FILENO;                               /* Inputfile descriptor to return         */
+    fd[0] = STDIN_FILENO;                               /* Input file descriptor to return        */
     fd[1] = STDOUT_FILENO;                              /* Output file descriptor to return       */
-	while (args[i++] != NULL) {                         /* Iterate through the arguments          */
+    while (args[i++] != NULL) {                         /* Iterate through the arguments          */
         if ((sym = Check4Special(*args[i-1]))) {        /* Check if args are <> or &              */
-            if (args[i] == NULL) {                      /* If there's no argument after <>        */
-               ThrowError("Error: invalid command line");             
-               return 1;                                /* Bad command, return 1                  */
-            }
+            if ((args[i] == NULL) || sym == '&') {      /* If no argument after <>, or ends in &  */
+                switch(sym){                            /* Output an error message                */
+                    case '<':
+                        NoInputFile();                  /* Error: no input file                   */        
+                        break;   
+                    case '>':                           /* Error: no output file                  */
+                        NoOutputFile();
+                        break;
+                    case '&':
+                        ThrowError("Error: mislocated background sign");
+                }        
+                return 1;                               /* Bad command, return 1                  */            
+            }                                           /* End - if no argument after <>          */
 
             args[i-1] = NULL;                           /* Replace <> with NULL, terminates array */
-            if((sym == '>') && (fd[1] == SO))           /* If output redirect, and out fd not set */
-                fd[1] = open(args[i], WMODE);           /* Open for writing, WMODE in sshell.h    */
-            else if ((sym == '<') && (fd[0] == SI))     /* If input redirect, and in fd not set   */
+            if((sym == '>') && (fd[1] == SO)){          /* If output redirect, and out fd not set */
+                fd[1] = open(args[i], WMODE);           /* Open for writing, WMODE in sshell.h    */            
+            } else if ((sym == '<') && (fd[0] == SI)) { /* If input redirect, and in fd not set   */
                 fd[0] = open(args[i], O_RDONLY);        /* Set the input file descriptor          */
                                                         /* @TODO Setup catchs' in case open fails */
-            else { 
-                ThrowError("Error: mislocated background sign");
+            } else { 
+                ThrowError("Error: mislocated redirection");
                 return 1;                               /* Bad command, return 1                  */
             }
-        }
-	}
+        }                                               /* End if args contain <>&                */  
+    }                                                   /* End while loop                         */
     return 0;                                           /* Good command, return 0                 */
 }
 /* **************************************************** */
@@ -363,7 +373,7 @@ int main(int argc, char *argv[], char *envp[])
 
 mainLoop:                                                /* Shell main loop label                           */
     while (keepRunning) {                                /* Main Loop                                       */
-        keystroke = GetChar();
+        keystroke = Get1Char();
         
         /* Process the keystroke */                      /* @TODO Put switch{} into keystrokeHandler()      */
         switch(keystroke) {
@@ -386,8 +396,8 @@ mainLoop:                                                /* Shell main loop labe
                 break;
             
             case ESCAPE:                                 /* ARROW KEYS  */
-                if (GetChar() == ARROW)
-                    switch(GetChar()) {
+                if (Get1Char() == ARROW)
+                    switch(Get1Char()) {
                         case UP:                         /*     UP      */
                             DisplayNextEntry(history, cmdLine, &cursorPos);
                             break;

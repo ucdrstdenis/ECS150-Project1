@@ -25,6 +25,7 @@ Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char nPipes, char 
     proc->parent  = NULL;                               /* @TODO Should be set to main shell PID    */
     proc->fd[0]   = fd[0];                              /* Input file descriptor                    */
     proc->fd[1]   = fd[1];                              /* Output file descriptor                   */
+    proc->printMe = 1;                                  /* By default, print '+ completed' messages */
     strcpy(proc->cmd, cmd);                             /* copy the command string                  */
    
     if (pList->count == 0) {                            /* Setup pointer to next process in list    */
@@ -107,11 +108,13 @@ void CheckCompletedProcesses(ProcessList *pList)
                 }
             } 
 	    else                                            /* Otherwise, its not piped                     */
-            CompleteCmd(curr->cmd, curr->status);       /* Print completed message                      */
-            if (prev == NULL)  
-		pList->top = curr->next;                        /* Prepare to delete the node                   */
+            if (curr->printMe)                  
+                CompleteCmd(curr->cmd, curr->status);   /* Print completed message                      */
+
+        if (prev == NULL)  
+		    pList->top = curr->next;                    /* Prepare to delete the node                   */
 	    else 
-		prev->next = curr->next;
+		    prev->next = curr->next;
                 	      
 	    free(curr);                                     /* Delete the node                              */
             pList->count--;                             /* Decrement the process count                  */

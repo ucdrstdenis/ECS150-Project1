@@ -86,6 +86,46 @@ void ThrowError (char *msg)
 }                    
 /* **************************************************** */
 /* **************************************************** */
+/* No Input File Error message                          */
+/* **************************************************** */
+void NoInputFile (void)
+{
+    ThrowError ("Error: no input file");
+}
+/* **************************************************** */
+/* **************************************************** */
+/* No Input File Error message                          */
+/* **************************************************** */
+void NoOutputFile (void)
+{
+    ThrowError ("Error: no output file");
+}
+/* **************************************************** */
+/* **************************************************** */
+/* Error: Invalid command message                       */
+/* **************************************************** */
+void InvalidCommand (void)
+{
+    ThrowError ("Error: invalid command line");
+}
+/* **************************************************** */
+/* **************************************************** */
+/* Error: mislocated input redirection                  */
+/* **************************************************** */
+void BadInputRedirect (void)
+{
+    ThrowError ("Error: mislocated input redirection");
+}
+/* **************************************************** */
+/* **************************************************** */
+/* Error: mislocated output redirection                 */
+/* **************************************************** */
+void BadOutputRedirect (void)
+{
+    ThrowError ("Error: mislocated output redirection");
+}
+/* **************************************************** */
+/* **************************************************** */
 /* Prints '+ completed' messages to STDERR              */
 /* **************************************************** */
 void CompleteCmd (char *cmd, int exitCode)
@@ -173,32 +213,6 @@ char *InsertSpaces(char *cmd)
 }
 /* **************************************************** */
 /* **************************************************** */
-/* Check for invalid placement of special characters    */
-/* Set background flag if '&' is last character         */
-/* Then remove '&' from the string                      */
-/* **************************************************** */
-char CheckCommand(char *cmd, char *isBackground)
-{
-    char s  = *cmd;                                     /* Get the first character in the array       */
-    char *end = strchr(cmd, '\0')-1;                    /* Get the last character in the array        */
-    *isBackground = 0;                                  /* Set the default flag                       */
-    if (*end == '|' || *end == '>' || *end == '<') {    /* Check the character at the end             */
-        ThrowError("Error: invalid command line");
-        return 1;
-    }
-    if (s == '|' || Check4Special(s)) {                 /* Check the character at the beginning       */
-        ThrowError("Error: invalid command line");
-        return 1;
-    }
-    if (*end == '&') {                                  /* If '&' is last character                   */
-        *isBackground = 1;                              /* Set the Background flag                    */
-        *end = '\0';                                    /* Remove '&' from the command                */
-    }
-    return 0;
-}
-/* **************************************************** */
-
-/* **************************************************** */
 /* Run dup2() and close(). Handle errors.               */
 /* **************************************************** */
 void Dup2AndClose(int old, int new)
@@ -212,6 +226,43 @@ void Dup2AndClose(int old, int new)
             exit(EXIT_FAILURE);                         /* Exit with failure                           */
         }
     }
+}
+/* **************************************************** */
+/* **************************************************** */
+/* Check for invalid placement of special characters    */
+/* Set background flag if '&' is last character         */
+/* Then remove '&' from the string                      */
+/* **************************************************** */
+char CheckCommand(char *cmd, char *isBackground)
+{
+    char s  = *cmd;                                     /* Get the first character in the array       */
+    char *end = strchr(cmd, '\0')-1;                    /* Get the last character in the array        */
+    switch (*end){                                      /* Check the character at the end             */
+	    case '|':
+            InvalidCommand();                           /* Invalid command line error                 */
+		    return 1;                                   /* Bad command, return 1                      */
+
+	    case '>':
+		    if (s != *end) NoOutputFile();              /* If > is not the only character in the cmd  */
+            else InvalidCommand();                      /* Otherwise Throw invalid command error      */
+            return 1;                                   /* Bad command, return 1                      */
+
+        case '<':
+            if (s != *end) NoInputFile();               /* If > is not the only character in the cmd  */  
+            else InvalidCommand();                      /* Otherwise Throw invalid command error      */
+            return 1;                                   /* Bad command, return 1                      */
+    }
+
+    if (s == '|' || Check4Special(s)) {                 /* Check the character at the beginning       */
+        InvalidCommand();
+        return 1;
+    }
+
+    if (*end == '&') {                                  /* If '&' is last character                   */
+        *isBackground = 1;                              /* Set the Background flag                    */
+        *end = '\0';                                    /* Remove '&' from the command                */
+    }
+    return 0;
 }
 /* **************************************************** */
 
@@ -240,13 +291,13 @@ void Dup2AndClose(int old, int new)
 //        PATH = semi+1;                                /* Update the address PATH points to           */
 //        semi = strchr(PATH, ':');                     /* semi points to the next place ':' occurs    */
 //    }
-
+//
 //    sprintf(binary, "%s/%s", PATH, prog);             /* Append binary to last entry in path         */
 //    if(access(binary, F_OK) != -1)                    /* If binary exists                            */
 //        return binary;
 //    else                                              /* If it doesn't exists                        */
 //        binary = prog;                                /* Just store the argument that was passed     */
-    
+//    
 //    return binary;                                    /* Return the binary name                      */
 //}
 /* **************************************************** */

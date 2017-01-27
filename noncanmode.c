@@ -10,14 +10,14 @@
 #include "noncanmode.h"
 
 /* ************************************ */
-/* Originates from Joel's noncanmode.c  */
+/* Originally from Joel's noncanmode.c  */
 /* ************************************ */
 
 static struct termios savedParameters;	/* Non-canonical mode management */
 static pid_t shell_pid;                 /* PID of shell */
 
 /* Read one character from the keyboard */
-inline char GetChar(void)
+inline char Get1Char(void)
 {
     char RxChar;
     int result = 0;

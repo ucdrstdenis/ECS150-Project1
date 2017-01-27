@@ -43,10 +43,18 @@ void PrintBackspace (void);                             /* Prints Backspace char
 void PrintNL (void);                                    /* Prints the newline character to STDOUT               */
 void ClearCmdLine (char *cmdLine, int *cursorPos);      /* Clear the current cmdLine buffer and STDIN           */
 void DisplayPrompt (int *cursorPos);                    /* Displace the main sshell$ prompt                     */
-void ThrowError (char *message);                        /* Print error message to STDERR                        */
 void CompleteCmd (char *cmd, int exitCode);             /* Prints + completed messages to STDOUT                */
 void CompleteChain (char *cmd, int *xArray);            /* Prints '+ completed' messages for chains to STDERR   */
 void Dup2AndClose(int old, int new);                    /* Function to redirect file descriptors                */
+/* **************************************************** */
+/*                    Error functions                   */
+/* **************************************************** */
+void ThrowError (char *message);                        /* Print error message to STDERR                        */
+void NoInputFile (void);                                /* Prints Error: no input file to STDERR                */
+void NoOutputFile (void);                               /* Prints Error: no output file to STDERR               */
+void InvalidCommand (void);                             /* Prints Error: invalid command line to STDERR         */
+void BadInputRedirect (void);                           /* Prints Error: mislocated input redirection           */
+void BadOutputRedirect (void);                          /* Prints Error: mislocated output redirection          */
 /* **************************************************** */
 /*                  Parsing functions                   */
 /* **************************************************** */
