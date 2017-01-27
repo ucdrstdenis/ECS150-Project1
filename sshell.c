@@ -118,7 +118,7 @@ char ***Pipes2Arrays(char *cmd, char *numPipes)
     cmd = RemoveWhitespace(cmd);                        /* Remove leading/trailing whitespace                   */
     char *bar = strchr(cmd, '|');                       /* bar points to the first occurance of '|' in cmd      */
     
-    while(bar != NULL) {                                /* Repeat until no more '|' found or max tokens reached */
+    while(bar != NULL) {                                /* Repeat until no more '|' 				*/
         *bar = '\0';                                    /* Replace '|' with '\0                                 */
         pipes[i++] = Cmd2Array(cmd);                    /* Put the cmd array into the pipes array               */
         cmd = RemoveWhitespace(bar+1);                  /* Remove leading/trailing whitespace for rest command  */
@@ -156,7 +156,7 @@ void Wait4Me(Process *Me)
         waitpid(Me->PID, &status, WNOHANG);             /* Use non-blocking call to waitpid       */
         Me->status = xStat(status);                     /* Set the temporary status               */
     } else {                                            /* Otherwise                              */
-        waitpid(Me->PID, &status, 0);                   /* wait for child to exit                 */
+        waitpid(Me->PID, &status, 0);                   /* wait for child to exit                 */	
         MarkProcessDone(processList, Me->PID, xStat(status));
     }
 }

@@ -90,15 +90,16 @@ void CompleteCmd (char *cmd, int exitCode)
 /* **************************************************** */
 /* Prints '+ completed' messages for chains to STDERR   */
 /* **************************************************** */
-void CompleteChain (char *cmd, char *xArray)
+void CompleteChain (char *cmd, int *xArray)
 {
-    int i = 0;
     char msg[2*MAX_BUFFER];                             /* @TODO minimize this buffer size */
+    char len = (char)(sizeof(xArray)/8);		/* int* is 8 bytes, cast as a char */
+    int i = 0;
     sprintf(msg, "+ completed '%s' [%d]", cmd, xArray[i]);
-    
-    while(xArray[i++] != '\0')
-        sprintf(msg, "%s[%d]", msg, xArray[i]);
-    
+
+    for(i = 1; i <= len; i++) 
+	sprintf(msg, "%s[%d]", msg, xArray[i]);
+
     sprintf(msg, "%s\n", msg);
     write(STDERR_FILENO, msg, strlen(msg));
 }
@@ -189,7 +190,7 @@ char CheckCommand(char *cmd, char *isBackground)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Function to redirect file descriptors                */
+/* Run dup2() and close(), handle errors.		*/
 /* **************************************************** */
 void Dup2AndClose(int old, int new)
 {
@@ -245,10 +246,10 @@ void Dup2AndClose(int old, int new)
 /* Function to execute program commands                 */
 /* If function is piped, ExecProgram() is recursive.    */
 /*                                                      */
-/* THIS WORKS GREAT!!! And does the work of 6 functions */
-/* in < 35 lines of code. But without using shared mem  */
-/* I couldn't figure out how to get the child exit      */ 
-/* status' back. Will save for another time.            */
+/* Excellent recursive function, does the work of 	*/
+/* 6 functions in < 35 lines of code. But without using */
+/* shared mem or writing to a file, could not get   	*/
+/* child exit status' back. Will save for another time. */
 /* **************************************************** */
 //void ExecProgram(char **cmds[], int N, Process *P)
 //{

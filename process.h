@@ -35,6 +35,7 @@ ProcessList *processList;                               /* Global->easy access f
 char MarkProcessDone(ProcessList *pList, pid_t PID, int status);                      /* Mark process with matching PID as completed          */
 void CheckCompletedProcesses(ProcessList *pList);                                     /* Check if any processes have completed                */
 Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char nPipes, char isBG, int *fd);   /* Add a process to the list of background processes    */
+int *GetChainStatus(Process *P);						      /* Get the exit status codes from piped commands */
 //Process *AddProcessAsChild(ProcessList *pList, pid_t pPID, pid_t cPID, char *cmd, char nPipes, char isBG, int *fd);
 Process *AddProcessAsChild(ProcessList *pList, Process *Parent, pid_t cPID, char *cmd, char nPipes, char isBG, int *fd);
 /* **************************************************** */
