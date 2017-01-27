@@ -197,7 +197,7 @@ char ExecProgram(char **cmds[], Process *P)
         if (CheckRedirect(cmds, cP, N)) return 1;       /* Setup redirects, check against pipes  */
         pipe(firstPipe);                                /* Create the Pipe                       */
         cP->fd[1] = firstPipe[1];                       /* Child will write to the pipe          */
-	cP->fd[0] = inPipe;				/* Get input from inPipe 		 */
+        cP->fd[0] = inPipe;                             /* Get input from inPipe                 */
         ForkMe(cmds[N++], cP);                          /* Fork the process, exec, close & wait  */
         
         /* Setup Pipes from P2 to P3 */
