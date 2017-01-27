@@ -129,7 +129,7 @@ char ***Pipes2Arrays(char *cmd, char *numPipes)
         pipes[i++] = Cmd2Array(cmd);                    /* Add them to the array                                */
          
     pipes[i] = NULL;                                    /* Set the last entry to be NULL                        */
-    *numPipes = i-1;                                    /* Number of Pipes in commmand + 1                      */
+    *numPipes = i;                                      /* Number of Pipes in commmand + 1                      */
     return pipes;                                       /* Return the pointer                                   */
 }
 /* **************************************************** */

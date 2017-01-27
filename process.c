@@ -53,18 +53,73 @@ Process *AddProcessAsChild(ProcessList *pList, Process *Parent, pid_t cPID, char
 /* **************************************************** */
 
 /* **************************************************** */
+/* Record the status of each chained process and free   */
+/* it from the list. Return pointer to status array     */
+/* **************************************************** */
+char *GetChainStatus(Process *P)
+{
+    //int i = 0;
+    Process *My = P;
+    char *status = (char *) malloc(P->nPipes+2);        /* Allocate space for status array  */
+    
+    sprintf(status, "%c", '\0');
+    while(My->child != NULL) {                          /* Iterate through children         */
+        sprintf(status,"%s%d",status,My->child->status);
+        //status[i++] =(char) My->child->status;          /* Add the value to the array       */
+        P->next = My->child->next;                      /* Remove the pointer from the list */
+        My = My->child;                                 /* Update pointer                   */
+        if (My->parent != P)                            /* Avoid segfault                   */
+            free(My->parent);                               /* Free the child (delete from list)*/
+    }
+    sprintf(status,"%s%d",status, P->status);                   /* Parent is always last in chain   */
+    //status[i++] = (char)My->status;                     /* Last child in list               */
+    //status[i] = '\0';                                   /* Terminate char array             */
+    P->next = My->next;                                 /* Remove pointer from the list     */
+    //free(My);                                         /* Free the child (delte from list  */
+    return status;                                      /* Return the pointer               */
+}
+/* **************************************************** */
+/* **************************************************** */
+/* Check if chained process's children have finished    */
+/* Return 1 if all finished, 0 if any still running     */
+/* **************************************************** */
+char CheckChildrenDone(Process *P)
+{
+    Process *My = P;
+    while(My->child != NULL) {                          /* Iterate through children */
+        if (My->child->running) return 0;               /* Still running, return 0  */
+        My = My->child;                                 /* Update the pointer       */
+    }
+    if (My->running) return 0;                          /* Last child still running */
+    return 1;                                           /* Otherwise all done       */
+}
+/* **************************************************** */
+
+/* **************************************************** */
 /* Check if any processes have completed                */
 /* Print completed message if they have                 */
 /* **************************************************** */
 void CheckCompletedProcesses(ProcessList *pList)
 {
+    char *stArray = NULL;
     Process *curr = pList->top;
     Process *prev = NULL;
     
-    while (curr != NULL) {                             /* Iterate through the list 	   */
-        if ((curr->running==0)&&(curr->parent==NULL)){ /* If process completed         */
-            CompleteCmd(curr->cmd, curr->status);      /* Print completed message 	   */
-	        if (prev == NULL)                          /* Prepare to delete the node   */
+    while (curr != NULL) {                             /* Iterate through the list                              */
+        if ((curr->running==0)&&(curr->parent==NULL)){ /* If process completed, and no children exist           */
+            //char debug[MAX_BUFFER];
+            //sprintf(debug,"nPipes=%d",curr->nPipes);
+            //ThrowError(debug);
+            if (curr->nPipes > 1) {                    /* If it's a chained process                             */
+                if(CheckChildrenDone(curr)) {          /* Check all children completed                          */
+                    stArray = GetChainStatus(curr);    /* Save exit status, delete all                          */
+                    CompleteChain(curr->cmd, stArray); /* Print completed message                               */
+                }
+            }
+            else                                       /* Otherwise, its not chained                            */
+                CompleteCmd(curr->cmd, curr->status);  /* Print completed message                               */
+	        
+            if (prev == NULL)                          /* Prepare to delete the node                            */
                 pList->top = curr->next;
 	        else
                 prev->next = curr->next;	      

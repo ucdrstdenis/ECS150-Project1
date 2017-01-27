@@ -88,6 +88,22 @@ void CompleteCmd (char *cmd, int exitCode)
 }
 /* **************************************************** */
 /* **************************************************** */
+/* Prints '+ completed' messages for chains to STDERR   */
+/* **************************************************** */
+void CompleteChain (char *cmd, char *xArray)
+{
+    int i = 0;
+    char msg[2*MAX_BUFFER];                             /* @TODO minimize this buffer size */
+    sprintf(msg, "+ completed '%s' [%d]", cmd, xArray[i]);
+    
+    while(xArray[i++] != '\0')
+        sprintf(msg, "%s[%d]", msg, xArray[i]);
+    
+    sprintf(msg, "%s\n", msg);
+    write(STDERR_FILENO, msg, strlen(msg));
+}
+/* **************************************************** */
+/* **************************************************** */
 /* Checks if character is whitespace or not             */
 /* **************************************************** */
 char Check4Space(char key)
