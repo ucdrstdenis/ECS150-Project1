@@ -17,7 +17,7 @@ char PrintWDir(char *args[]);                           /* Handles 'pwd' command
 char RunCommand (char *cmdLine);                    	/* Wrapper to execute whatever is on the command line   */
 char ExecProgram(char **cmds[], Process *P);            /* Execute program commands, inner-looped when piped    */
 void ForkMe(char *cmds[], Process *Me);                 /* Forks a process. Child executes, parent waits.       */
-void ExecProg(char *cmds[], Process *P);                /* Execute a single execvp call post fork()             */
+void RunMe(char *cmds[], Process *Me);                  /* Execute a single execvp call post fork()             */
 void Wait4Me(Process *Me);                              /* Executes blocking or non-blocking wait               */
 char Redirect(char *args[], int *fd);                   /* Sets up input/output file descriptors                */
 char CheckRedirect(char **cmds[], Process *P, int N);   /* Sets up redirects and checks if piped                */

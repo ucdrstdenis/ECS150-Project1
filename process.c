@@ -43,13 +43,13 @@ Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char nPipes, char 
 /* **************************************************** */
 /* Add a process as a child of another processs         */
 /* **************************************************** */
-Process *AddProcessAsChild(ProcessList *pList, Process *Parent, pid_t cPID, char *cmd, char nPipes, char isBG, int *fd)
+Process *AddProcessAsChild(ProcessList *pList, Process *P, pid_t cPID, char *cmd)
 {
-    Process *child = (Process*) AddProcess(pList, cPID, cmd, nPipes, isBG, fd);
+    Process *child = (Process*) AddProcess(pList, cPID, cmd, P->nPipes, P->isBG, P->fd);
     pList->count--;                                     /* Don't let child processes affect the count */
-    Parent->child = child;
-    child->parent = Parent;
-    return child;
+    P->child = child;                                   /* Mark the process as "child" of parent      */
+    child->parent = P;                                  /* Mark the parent of the "child"             */
+    return child;                                       /* Return the pointer                         */
 }
 /* **************************************************** */
 

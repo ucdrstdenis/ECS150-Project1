@@ -215,10 +215,10 @@ char *InsertSpaces(char *cmd)
 /* **************************************************** */
 /* Run dup2() and close(). Handle errors.               */
 /* **************************************************** */
-void Dup2AndClose(int old, int new)
+void Dup2AndClose(int old, int bnew)                    /* new is already a keyword                    */
 {
-    if (old != new) {                                   /* Check file descriptors are not the same     */
-        if(dup2(old, new) != -1) {                      /* Check dup2() succeeds                       */
+    if (old != bnew) {                                  /* Check file descriptors are not the same     */
+        if(dup2(old, bnew) != -1) {                     /* Check dup2() succeeds                       */
             if (close(old) == -1)                       /* Check close() doesn't fail                  */
                 perror("close");                        /* Report the error if close fails             */
         } else {                                        /* If dup2() fails                             */

@@ -36,16 +36,16 @@
 /* **************************************************** */
 /*                   Common functions                   */
 /* **************************************************** */
-void ErrorBell(void);                                   /* Sound Bell noise                                     */
 void SayHello (void);                                   /* Prints the hello message. Removed for auto-testing   */
 void SayGoodbye (void);                                 /* Prints the exit message                              */
-void PrintBackspace (void);                             /* Prints Backspace character to STDOUT                 */
+void ErrorBell(void);                                   /* Sound Bell noise                                     */
 void PrintNL (void);                                    /* Prints the newline character to STDOUT               */
+void PrintBackspace (void);                             /* Prints Backspace character to STDOUT                 */
 void ClearCmdLine (char *cmdLine, int *cursorPos);      /* Clear the current cmdLine buffer and STDIN           */
 void DisplayPrompt (int *cursorPos);                    /* Displace the main sshell$ prompt                     */
 void CompleteCmd (char *cmd, int exitCode);             /* Prints + completed messages to STDOUT                */
 void CompleteChain (char *cmd, int *xArray);            /* Prints '+ completed' messages for chains to STDERR   */
-void Dup2AndClose(int old, int new);                    /* Function to redirect file descriptors                */
+void Dup2AndClose(int old, int bnew);                   /* Runs dup2() and close(), performs error checking     */
 /* **************************************************** */
 /*                    Error functions                   */
 /* **************************************************** */
