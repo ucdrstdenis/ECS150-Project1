@@ -2,22 +2,15 @@
 #define _COMMON_H
 
 /* **************************************************** */
-/*              Spec-Defined Assumptions                */
+/*                Spec-Defined Assumptions              */
 /* **************************************************** */
 #define MAX_BUFFER    512
 #define MAX_TOKENS     16
 #define MAX_TOKEN_LEN  32
 #define MAX_HIST_ITEMS 10
 
-#define TRUE            1
-#define FALSE           0
-
-#define SI              STDIN_FILENO
-#define SO              STDOUT_FILENO
-#define SE              STDERR_FILENO
-
 /* **************************************************** */
-/*                  Keystroke Codes                     */
+/*                    Keystroke Codes                   */
 /* **************************************************** */
 #define CTRL_D       0x04
 #define TAB          0x09
@@ -31,9 +24,20 @@
 #define LEFT         0x44
 
 /* **************************************************** */
+/*                     Convenience                      */
+/* **************************************************** */
+#define TRUE         1
+#define FALSE        0
+
+#define SI           STDIN_FILENO
+#define SO           STDOUT_FILENO
+#define SE           STDERR_FILENO
+
+/* **************************************************** */
 /*                   Common functions                   */
 /* **************************************************** */
 void ErrorBell(void);                                   /* Sound Bell noise                                     */
+void SayHello (void);                                   /* Prints the hello message. Removed for auto-testing   */
 void SayGoodbye (void);                                 /* Prints the exit message                              */
 void PrintBackspace (void);                             /* Prints Backspace character to STDOUT                 */
 void PrintNL (void);                                    /* Prints the newline character to STDOUT               */
@@ -50,8 +54,12 @@ char CheckCommand(char *cmd, char *isBackground);   	/* Check for invalid placem
 char Check4Space(char key);                             /* Checks if character is whitespace or not             */
 char Check4Special(char key);                           /* Checks if special character of not                   */
 char *RemoveWhitespace(char *string);                   /* Strips trailing and leading whitespace from a string */
-char *InsertSpaces(char *cmd);                          /* Inserts ' ' before and after all <>& characters      */
-char *SearchPath(char *prog);	                        /* Returns a pointer to the full path specified binary  */
+char *InsertSpaces(char *cmd);                          /* Ensures ' ' before and after all <>& characters      */
+/* ******************************************************/
+/*                  Unused functions                    */
+/* ******************************************************/
+//char *SearchPath(char *prog);	                        /* Returns a pointer to the full path specified binary  */
+//ExecProgram(**Cmds[], N, Process *P);                 /* Function to execute a command. Recursive if piped    */
 /* **************************************************** */
 
 #endif

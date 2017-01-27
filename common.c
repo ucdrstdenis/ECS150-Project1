@@ -8,10 +8,11 @@
 /* **************************************************** */
 /*               Shell Print Characters                 */
 /* **************************************************** */
-const char *SHELL_PROMPT = "sshell$ ";
-const char *BELL = "\a";
-const char *NEWLINE = "\r\n";
-const char *EXITLINE = "Bye...\n";
+const char *SHELL_PROMPT   = "sshell$ ";
+const char *EXITLINE       = "Bye...\n";
+const char *HELLO          = "Hello!\n";
+const char *BELL           = "\a";
+const char *NEWLINE        = "\r\n";
 const char *BACKSPACE_CHAR = "\b \b";
 /* **************************************************** */
 /* **************************************************** */
@@ -23,11 +24,19 @@ void ErrorBell(void)
 }
 /* **************************************************** */
 /* **************************************************** */
-/* Prints the exit message                              */
+/* Prints the exit message.                             */
 /* **************************************************** */
 void SayGoodbye (void)
 {
     write(STDERR_FILENO, EXITLINE, strlen(EXITLINE));
+}
+/* **************************************************** */
+/* **************************************************** */
+/* Prints the welcome message. Removed for auto-testing */
+/* **************************************************** */
+void SayHello (void)
+{
+//    write(STDERR_FILENO, HELLO, strlen(HELLO));
 }
 /* **************************************************** */
 /* **************************************************** */
@@ -88,12 +97,12 @@ void CompleteCmd (char *cmd, int exitCode)
 }
 /* **************************************************** */
 /* **************************************************** */
-/* Prints '+ completed' messages for chains to STDERR   */
+/* Prints '+ completed' messages for piped commands     */
 /* **************************************************** */
 void CompleteChain (char *cmd, int *xArray)
 {
-    char msg[2*MAX_BUFFER];                             /* @TODO minimize this buffer size */
-    char len = (char)(sizeof(xArray)/8);		/* int* is 8 bytes, cast as a char */
+    char msg[2*MAX_BUFFER];                             /* @TODO minimize this buffer size          */
+    char len = (char)(sizeof(xArray)/8);                /* int* is 8 bytes, cast as a char          */
     int i = 0;
     sprintf(msg, "+ completed '%s' [%d]", cmd, xArray[i]);
 
@@ -116,7 +125,7 @@ char Check4Space(char key)
 }
 /* **************************************************** */
 /* **************************************************** */
-/* Checks if special character of not                   */
+/* Checks if special character or not                   */
 /* **************************************************** */
 char Check4Special(char key)
 {
@@ -129,7 +138,7 @@ char Check4Special(char key)
 }
 /* **************************************************** */
 /* **************************************************** */
-/* Strips trailing and leading whitespace from a string */
+/* Strips trailing and leading whitespace.              */
 /* **************************************************** */
 char *RemoveWhitespace(char *string)
 {
@@ -190,7 +199,7 @@ char CheckCommand(char *cmd, char *isBackground)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Run dup2() and close(), handle errors.		*/
+/* Run dup2() and close(). Handle errors.               */
 /* **************************************************** */
 void Dup2AndClose(int old, int new)
 {
@@ -211,7 +220,7 @@ void Dup2AndClose(int old, int new)
 /* the specified program                                */
 /* Uses the first entry in PATH that has valid entry    */
 /*                                                      */
-/* WORKS VERY WELL, BUT NOT NEEDED IF EXECVP USED       */
+/*   Works excellent, but not needed if execvp() used.  */
 /*                      * sigh *                        */
 /*                                                      */
 /* Example - *PATH = /usr/bin:/opt/bin                  */
@@ -219,26 +228,26 @@ void Dup2AndClose(int old, int new)
 /*           returns "/usr/bin/ls"                      */
 /* **************************************************** */
 //char *SearchPath(char *prog) {
-//    unsigned int len = strlen(prog);                   /* Length of the string of the passed program  */
-//    char *binary  = (char *) malloc(MAX_BUFFER+len);   /* Pointer to hold the full name of the binary */
-//    char *PATH = getenv("PATH");                       /* Store contents of the PATH variable         */
-//    char *semi = strchr(PATH, ':');                    /* semi points to the first place ':' occurs   */
-//    while(semi != NULL) {                              /* Repeat until no more ':' found              */
-//        *semi = '\0';                                  /* Terminate the string where ':' was          */
-//        sprintf(binary, "%s/%s", PATH, prog);          /* Append the first path to binary name        */
-//        if(access(binary, F_OK) != -1)                 /* If binary exists                            */
-//            return binary;                             /* Return the full name of the binary          */
-//        PATH = semi+1;                                 /* Update the address PATH points to           */
-//        semi = strchr(PATH, ':');                      /* semi points to the next place ':' occurs    */
+//    unsigned int len = strlen(prog);                  /* Length of the string of the passed program  */
+//    char *binary  = (char *) malloc(MAX_BUFFER+len);  /* Pointer to hold the full name of the binary */
+//    char *PATH = getenv("PATH");                      /* Store contents of the PATH variable         */
+//    char *semi = strchr(PATH, ':');                   /* semi points to the first place ':' occurs   */
+//    while(semi != NULL) {                             /* Repeat until no more ':' found              */
+//        *semi = '\0';                                 /* Terminate the string where ':' was          */
+//        sprintf(binary, "%s/%s", PATH, prog);         /* Append the first path to binary name        */
+//        if(access(binary, F_OK) != -1)                /* If binary exists                            */
+//            return binary;                            /* Return the full name of the binary          */
+//        PATH = semi+1;                                /* Update the address PATH points to           */
+//        semi = strchr(PATH, ':');                     /* semi points to the next place ':' occurs    */
 //    }
 
-//    sprintf(binary, "%s/%s", PATH, prog);              /* Append binary to last entry in path         */
-//    if(access(binary, F_OK) != -1)                     /* If binary exists                            */
+//    sprintf(binary, "%s/%s", PATH, prog);             /* Append binary to last entry in path         */
+//    if(access(binary, F_OK) != -1)                    /* If binary exists                            */
 //        return binary;
-//    else                                               /* If it doesn't exists                        */
-//        binary = prog;                                 /* Just store the argument that was passed     */
+//    else                                              /* If it doesn't exists                        */
+//        binary = prog;                                /* Just store the argument that was passed     */
     
-//    return binary;                                     /* Return the binary name                      */
+//    return binary;                                    /* Return the binary name                      */
 //}
 /* **************************************************** */
 
@@ -246,7 +255,7 @@ void Dup2AndClose(int old, int new)
 /* Function to execute program commands                 */
 /* If function is piped, ExecProgram() is recursive.    */
 /*                                                      */
-/* Excellent recursive function, does the work of 	*/
+/* Excellent recursive function, does the work of 	    */
 /* 6 functions in < 35 lines of code. But without using */
 /* shared mem or writing to a file, could not get   	*/
 /* child exit status' back. Will save for another time. */
@@ -284,5 +293,3 @@ void Dup2AndClose(int old, int new)
 //    }
 //}
 /* **************************************************** */
-
-

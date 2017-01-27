@@ -14,20 +14,20 @@
 /* **************************************************** */
 #include "common.h"                                     /* Keystrokes, parsing, & common functions        */
 #include "history.h"                                    /* History structures and related functions       */
-#include "noncanmode.h"                                 /* Modified version of the file provided by Joel  */
+#include "noncanmode.h"                                 /* Slightly modifiedd version of Joel's file      */
 #include "sshell.h"                                     /* Function prototypes for sshell.c functions     */
 /* **************************************************** */
 
 /* **************************************************** */
-/* Interrupt / Signal handler for SIGCHDL               */
+/* SIGCHDL Signal Handler                               */
 /* **************************************************** */
 void ChildSignalHandler(int signum)
 {
     pid_t PID;
-    int status = 0;
-    while ((PID = waitpid(-1, &status, WNOHANG)) > 0){   /* Allow multiple child processes to terminate if necessary  */
-        MarkProcessDone(processList, PID, xStat(status));/* Mark the process as completed                             */
-    }
+    int status;
+
+    while ((PID = waitpid(-1, &status, WNOHANG)) > 0)   /* Allow many child proccesses to end if needed   */
+        MarkProcessDone(processList,PID,xStat(status)); /* Mark the process as completed                  */
 }
 /* **************************************************** */
 
@@ -83,14 +83,14 @@ char **Cmd2Array(char *cmd)
     char *space = strchr(cmd, ' ');                     /* space points to the first occurance of ' ' in cmd    */
     
     while(space != NULL) {                              /* Repeat until no more ' ' found                       */
-        *space = '\0';                                  /* Replace ' ' with '\0'                                */
+        *space = '\0';                                  /* Replace ' ' with '\0' to terminate the string        */
         args[i] = (char *) malloc(strlen(cmd)+1);       /* Allocate space for the cmd string                    */
         args[i++] = cmd;                                /* Put null terminated string into the arguments array  */
         cmd = RemoveWhitespace(space + 1);              /* Remove leading/trailing whitespace in remaining cmd  */
         space = strchr(cmd, ' ');                       /* space points to the first place ' ' occurs in cmd    */
     }
     
-    if (*cmd != '\0') {                                 /* If no more spaces, but still not end of cmd          */
+    if (*cmd != '\0') {                                 /* If no more spaces, but still not at the end of cmd   */
         args[i] = (char *)malloc(strlen(cmd)+1);        /* Allocate space for the remaining portion of cmd      */
         args[i++] = cmd;
     }
@@ -108,8 +108,8 @@ char **Cmd2Array(char *cmd)
 /* where args0 = {"ls", "-la", NULL}                    */
 /* where args1 = {"grep", "filename", NUll}             */
 /*                     Example  2                       */
-/* "ls -la" -> {args0, NULL}                            */
-/* where args0 = {"ls", "-la", NULL}                    */
+/* "ls -la>outfile" -> {args0, NULL}                    */
+/* where args0 = {"ls", "-la", ">", "outfile", NULL}    */
 /* **************************************************** */
 char ***Pipes2Arrays(char *cmd, char *numPipes)
 {
@@ -118,7 +118,7 @@ char ***Pipes2Arrays(char *cmd, char *numPipes)
     cmd = RemoveWhitespace(cmd);                        /* Remove leading/trailing whitespace                   */
     char *bar = strchr(cmd, '|');                       /* bar points to the first occurance of '|' in cmd      */
     
-    while(bar != NULL) {                                /* Repeat until no more '|' 				*/
+    while(bar != NULL) {                                /* Repeat until no more '|'                             */
         *bar = '\0';                                    /* Replace '|' with '\0                                 */
         pipes[i++] = Cmd2Array(cmd);                    /* Put the cmd array into the pipes array               */
         cmd = RemoveWhitespace(bar+1);                  /* Remove leading/trailing whitespace for rest command  */
@@ -134,8 +134,8 @@ char ***Pipes2Arrays(char *cmd, char *numPipes)
 }
 /* **************************************************** */
 /* **************************************************** */
-/* Function to execute single program call              */
-/* Redirects i/o from/to Process file descriptors       */
+/* Function to execute single program call post fork.   */
+/* Redirects i/o from/to process file descriptors       */
 /* **************************************************** */
 void ExecProg(char *cmds[], Process *P)
 {
@@ -161,7 +161,6 @@ void Wait4Me(Process *Me)
     }
 }
 /* **************************************************** */
-
 /* **************************************************** */
 /* Forks a process. Child executes, parent waits        */
 /* **************************************************** */
@@ -217,16 +216,16 @@ char ExecProgram(char **cmds[], Process *P)
     /* Only 2 commands to pipe left */ 
     if (cmds[N+1] != NULL) {                                          
         cP = AddProcessAsChild(processList, Me, 1, "\0", Me->nPipes-1, Me->isBG, Me->fd);
-        if (CheckRedirect(cmds, cP, N)) return 1;       /* Setup redirects, check against pipes */
-        pipe(firstPipe);                                /* Create the Pipe                      */
-        cP->fd[1] = firstPipe[1];                       /* Child will write to the pipe         */
-        ForkMe(cmds[N++], cP);                          /* Fork the process, exec program, wait */
-        myPipe = firstPipe;                             /* myPipe points to firstPipe           */
+        if (CheckRedirect(cmds, cP, N)) return 1;       /* Setup redirects, check against pipes  */
+        pipe(firstPipe);                                /* Create the Pipe                       */
+        cP->fd[1] = firstPipe[1];                       /* Child will write to the pipe          */
+        ForkMe(cmds[N++], cP);                          /* Fork the process, exec program, wait  */
+        myPipe = firstPipe;                             /* myPipe points to firstPipe            */
     } 
 
     /* Only 1 command to left to run  */
-    if (CheckRedirect(cmds, P, N)) return 1;            /* Setup redirects, check against pipes */
-    if (N != 0)  P->fd[0] = myPipe[0];                  /* If last in a chain, get piped input  */
+    if (CheckRedirect(cmds, P, N)) return 1;            /* Setup redirects, check against pipes  */
+    if (N != 0)  P->fd[0] = myPipe[0];                  /* If last in a chain, get piped input   */
     ForkMe(cmds[N], P);
     return 0;
 }
@@ -248,7 +247,7 @@ char RunCommand(char *cmdLine)
     cmdLine = InsertSpaces(cmdLine);                    /* Add spaces before and after <>&       */
     cmdLine = RemoveWhitespace(cmdLine);                /* Remove leading/trailing whitespace    */
     
-    if (CheckCommand(cmdLine, &isBg)) return 0;         /* Check for invalid character placement */
+    if (CheckCommand(cmdLine, &isBg)) return 0;         /* Check for bad character placement     */
     Cmds = Pipes2Arrays(cmdLine, &numPipes);            /* Breakup command into  *array[][]      */
     
     if (Cmds[0] == NULL)              return 0;         /* Return if nothing in command line     */
@@ -267,7 +266,7 @@ char RunCommand(char *cmdLine)
             P->status = 1;                              /* Set the failure status                */
         } 
     }
-    return 0;                                           /* Continue main loop                     */
+    return 0;                                           /* Continue main loop                    */
 }
 /* **************************************************** */
 
@@ -276,12 +275,16 @@ char RunCommand(char *cmdLine)
 /* **************************************************** */
 char CheckRedirect(char **cmds[], Process *P, int N)
 {
-    if (Redirect(cmds[N], P->fd)) return 1;             /* Bad command, return 1                */
-    if ((P->fd[0] != SI) && (N != 0))  return 1;        /* Can't have piped input and file input*/
-    if ((P->fd[1] != SO) && (cmds[N+1]!= NULL))         /* Can't have piped output and file out */ 
-        return 1;                                       /* Bad command, return 1                */
-
-    return 0;                                           /* No bad connections                   */
+    if (Redirect(cmds[N], P->fd)) return 1;             /* Bad command, return 1                 */
+    if ((P->fd[0] != SI) && (N != 0)){                  /* Can't have piped input & file input   */
+        ThrowError("Error: mislocated input redirection");
+        return 1;
+    }
+    if ((P->fd[1] != SO) && (cmds[N+1]!= NULL)){        /* Can't have piped output and file out  */
+        ThrowError("Error: mislocated output redirection");
+        return 1;                                       /* Bad command, return 1                 */
+    }
+    return 0;                                           /* No bad connections                    */
 }
 /* **************************************************** */
 
@@ -298,7 +301,7 @@ char Redirect(char *args[], int *fd)
     fd[1] = STDOUT_FILENO;                              /* Output file descriptor to return       */
 	while (args[i++] != NULL) {                         /* Iterate through the arguments          */
         if ((sym = Check4Special(*args[i-1]))) {        /* Check if args] = <> or &               */            
-            if (args[i] == NULL) {                      /* If no argument afer <>                 */
+            if (args[i] == NULL) {                      /* If no argument after <>                */
                ThrowError("Error: invalid command line");             
                return 1;                                /* Bad command, return 1                  */
             }
@@ -320,7 +323,7 @@ char Redirect(char *args[], int *fd)
 /* **************************************************** */
 
 /* **************************************************** */
-/* Shell Initialization function                        */
+/*            Shell Initialization function             */
 /* **************************************************** */
 void InitShell(History *history, int *cursorPos)
 {
@@ -337,7 +340,7 @@ void InitShell(History *history, int *cursorPos)
     /* Setup SIGCHLD signal handler */
     struct sigaction act;                               /* Sigaction struct for SIGCHLD signal handlers     */
     act.sa_flags = SA_RESTART | SA_NOCLDSTOP;           /* Avoid EINTR | Only call when process terminates  */
-    act.sa_handler = ChildSignalHandler;                /* Define signal handler                            */
+    act.sa_handler = ChildSignalHandler;                /* Define signal handler routine                    */
     sigemptyset(&act.sa_mask);                          /* From noncanmode.c                                */
 
     if (sigaction(SIGCHLD, &act, NULL)) {               /* Call sigaction, check for error                  */
@@ -346,6 +349,7 @@ void InitShell(History *history, int *cursorPos)
     }
     
     SetNonCanMode();                                    /* Switch to non-canonical terminal mode            */
+    SayHello();                                         /* Print the welcome message                        */
     DisplayPrompt(cursorPos);                           /* Print the prompt and clear the cursor position   */
 }
 /* **************************************************** */
@@ -359,15 +363,16 @@ int main(int argc, char *argv[], char *envp[])
     char keystroke, cmdLine[MAX_BUFFER];
     unsigned char tryExit = 0, keepRunning = 1;
 
-    processList = malloc(sizeof(ProcessList)); 		     /* Global list of processes being tracked */
-    History *history = (History*)malloc(sizeof(History));/* Local list of history entries */
-    InitShell(history, &cursorPos);                      /* Initialize the shell */
+    processList = malloc(sizeof(ProcessList)); 		     /* Global list of processes being tracked          */
+    History *history = (History*)malloc(sizeof(History));/* Local list of history entries                   */
+    InitShell(history, &cursorPos);                      /* Initialize the shell                            */
 
-mainLoop:                                                /* Shell main loop label */
-    while (keepRunning) {                                /* Main Loop */
+mainLoop:                                                /* Shell main loop label                           */
+    while (keepRunning) {                                /* Main Loop                                       */
         keystroke = GetChar();
-                                                         /* @TODO put switch statement into keystrokeHandler() */
-        switch(keystroke) {                              /* Process the keytroke */
+        
+        /* Process the keystroke */                      /* @TODO Put switch{} into keystrokeHandler()      */
+        switch(keystroke) {
             case CTRL_D:                                 /* CTRL + D */
                 PrintNL();
                 keepRunning = 0;
@@ -417,28 +422,29 @@ mainLoop:                                                /* Shell main loop labe
 		break;
         
             default:                                     /* ANY OTHER KEY */
-                if (cursorPos < MAX_BUFFER) {            /* Make sure there's room in the buffer */
-                    write(STDOUT_FILENO, &keystroke, 1);
+                if (cursorPos < MAX_BUFFER) {            /* Make sure there's room in the buffer            */
+                    write(STDOUT_FILENO, &keystroke, 1); /* Write the keystroke on STDOUT                   */
                     cmdLine[cursorPos++] = keystroke;
                 } else
                     ErrorBell();
-        }                                                /* End switch statement */
-    }                                                    /* End Main Loop */
-
-    if (processList->count) {                            /* If background commands are still running */
-        ThrowError("Error: active jobs still running") ; /* Report the error */
-            if(tryExit) {                                /* If the command was "exit" (as opposed to Ctrl+D) */
-                CompleteCmd("exit", 1);                  /* Print '+ completed' message */
-                tryExit = 0;                             /* Reset the variable */
+        }                                                /* End switch statement                            */
+    }                                                    /* End Main Loop                                   */
+    
+    /* **************************************************************************************************** */
+    if (processList->count) {                            /* If background commands are still running        */
+        ThrowError("Error: active jobs still running") ; /* Report the error                                */
+            if(tryExit) {                                /* If command was "exit" (as opposed to Ctrl+D)    */
+                CompleteCmd("exit", 1);                  /* Print '+ completed' message                     */
+                tryExit = 0;                             /* Reset the variable                              */
             }
-        keepRunning = 1;                                 /* Set the while loop to continue running */
-        CheckCompletedProcesses(processList);            /* Check for completed processes */
-        DisplayPrompt(&cursorPos);                       /* Reprint the prompt */
-        goto mainLoop;                                   /* Re-enter main loop */
+        keepRunning = 1;                                 /* Set the while loop to continue running          */
+        CheckCompletedProcesses(processList);            /* Check for completed processes                   */
+        DisplayPrompt(&cursorPos);                       /* Reprint the prompt                              */
+        goto mainLoop;                                   /* Re-enter main loop via assembly JMP             */
     }
 
-    ResetCanMode();                                      /* Switch back to previous terminal mode */
-    SayGoodbye();                                        /* Print the exit message */
+    ResetCanMode();                                      /* Switch back to previous terminal mode           */
+    SayGoodbye();                                        /* Print the exit message                          */
     
     return EXIT_SUCCESS;
 }

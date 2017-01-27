@@ -2,8 +2,11 @@
 #define _SSHELL_H
 
 #include "process.h"                                    /* Functions for tracking background processes          */
+/* **************************************************** */
+/*                     Convenience                      */
+/* **************************************************** */
 #define xStat(status) WEXITSTATUS(status)               /* Rename WEXITSTATUS                                   */
-#define WMODE O_CREAT | O_TRUNC | O_WRONLY              /* Create if doesn't exist, clear file, write only      */
+#define WMODE (O_CREAT | O_TRUNC | O_WRONLY)            /* Create if doesn't exist, clear file, write only      */
 
 /* **************************************************** */
 /*                       SShell                         */
