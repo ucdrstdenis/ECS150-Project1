@@ -33,6 +33,8 @@ ProcessList *processList;                               /* Global->easy access f
 /* **************************************************** */
 /*                       Process                        */
 /* **************************************************** */
+void CompleteChain (Process *P, int *xArray); 					       /* Prints '+ completed' messages for chains      */
+Process *CopyDelete(Process *To, Process *From);
 int *GetChainStatus(Process *P);                                                      /* Get the exit status codes from piped commands  */
 void CheckCompletedProcesses(ProcessList *pList);                                     /* Check if any processes have completed          */
 char MarkProcessDone(ProcessList *pList, pid_t PID, int status);                      /* Mark process with matching PID as completed    */

@@ -12,7 +12,7 @@ const char *SHELL_PROMPT   = "sshell$ ";
 const char *EXITLINE       = "Bye...\n";
 const char *HELLO          = "Hello!\n";
 const char *BELL           = "\a";
-const char *NEWLINE        = "\r\n";
+const char *NEWLINE        = "\n";
 const char *BACKSPACE_CHAR = "\b \b";
 /* **************************************************** */
 /* **************************************************** */
@@ -133,23 +133,6 @@ void CompleteCmd (char *cmd, int exitCode)
     char msg[MAX_BUFFER + 25];
     sprintf(msg, "+ completed '%s' [%d]\n", cmd, exitCode);
 
-    write(STDERR_FILENO, msg, strlen(msg));
-}
-/* **************************************************** */
-/* **************************************************** */
-/* Prints '+ completed' messages for piped commands     */
-/* **************************************************** */
-void CompleteChain (char *cmd, int *xArray)
-{
-    char msg[2*MAX_BUFFER];                             /* @TODO minimize this buffer size          */
-    char len = (char)(sizeof(xArray)/8);                /* int* is 8 bytes, cast as a char          */
-    int i = 0;
-    sprintf(msg, "+ completed '%s' [%d]", cmd, xArray[i]);
-
-    for(i = 1; i <= len; i++) 
-	sprintf(msg, "%s[%d]", msg, xArray[i]);
-
-    sprintf(msg, "%s\n", msg);
     write(STDERR_FILENO, msg, strlen(msg));
 }
 /* **************************************************** */

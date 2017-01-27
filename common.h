@@ -44,7 +44,6 @@ void PrintBackspace (void);                             /* Prints Backspace char
 void ClearCmdLine (char *cmdLine, int *cursorPos);      /* Clear the current cmdLine buffer and STDIN           */
 void DisplayPrompt (int *cursorPos);                    /* Displace the main sshell$ prompt                     */
 void CompleteCmd (char *cmd, int exitCode);             /* Prints + completed messages to STDOUT                */
-void CompleteChain (char *cmd, int *xArray);            /* Prints '+ completed' messages for chains to STDERR   */
 void Dup2AndClose(int old, int bnew);                   /* Runs dup2() and close(), performs error checking     */
 /* **************************************************** */
 /*                    Error functions                   */

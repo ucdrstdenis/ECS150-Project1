@@ -187,8 +187,9 @@ char ExecProgram(char **cmds[], Process *P)
     int N = 0;                                          /* Pipe iterator                         */
     int firstPipe[2];                                   /* FD for chaining pipes together        */
     int secPipe[2];                                     /* FD for chaining pipes togetehr        */
-    int *myPipe;                                        /* Pointer that points to 1 of 2 pipes   */
+    int inPipe = SI;                                    /* Pointer that points to 1 of 2 pipes   */
     Me = P;                                             /* Me points to the parent in the chain  */
+   
     while ((cmds[N+1] != NULL) && cmds[N+2] != NULL) {  /* While pipes to chain together exist   */
          cP = AddProcessAsChild(processList, Me, 1, "\0");
 
@@ -196,6 +197,7 @@ char ExecProgram(char **cmds[], Process *P)
         if (CheckRedirect(cmds, cP, N)) return 1;       /* Setup redirects, check against pipes  */
         pipe(firstPipe);                                /* Create the Pipe                       */
         cP->fd[1] = firstPipe[1];                       /* Child will write to the pipe          */
+	cP->fd[0] = inPipe;                                 /* Get input from inPipe 		 */
         ForkMe(cmds[N++], cP);                          /* Fork the process, exec, close & wait  */
         
         /* Setup Pipes from P2 to P3 */
@@ -205,9 +207,8 @@ char ExecProgram(char **cmds[], Process *P)
         cP2->fd[0] = firstPipe[0];                      /* Child will read from last pipe        */
         cP2->fd[1] = secPipe[1];                        /* but will write to the next pipe       */
         ForkMe(cmds[N++], cP2);                         /* Fork the process, exec, close & wait  */
-
         Me = cP2;                                       /* Parent now becomes child process 2    */
-        myPipe = secPipe;                               /* myPipe points to secPipe              */
+        inPipe = secPipe[0];                            /* inPipe points to secPipe[0] now       */
     }
 
     /* Only 2 commands to pipe left */ 
@@ -216,13 +217,14 @@ char ExecProgram(char **cmds[], Process *P)
         if (CheckRedirect(cmds, cP, N)) return 1;       /* Setup redirects, check against pipes  */
         pipe(firstPipe);                                /* Create the Pipe                       */
         cP->fd[1] = firstPipe[1];                       /* Child will write to the pipe          */
+	    cP->fd[0] = inPipe;                             /* Child reads from in pipe 		 */
         ForkMe(cmds[N++], cP);                          /* Fork the process, exec program, wait  */
-        myPipe = firstPipe;                             /* myPipe points to firstPipe            */
+        inPipe = firstPipe[0];                          /* inPipe points to firstPipe[0]         */
     } 
 
     /* Only 1 command to left to run  */
     if (CheckRedirect(cmds, P, N)) return 1;            /* Setup redirects, check against pipes  */
-    if (N != 0)  P->fd[0] = myPipe[0];                  /* If last in a chain, get piped input   */
+    if (N != 0)  P->fd[0] = inPipe;                     /* If last in a chain, get piped input   */
     ForkMe(cmds[N], P);
     return 0;
 }
@@ -237,7 +239,7 @@ char RunCommand(char *cmdLine)
     Process *P;                                         /* New Process Pointer                   */
     char isBg = 0;                                      /* Flag for background commands          */
     char *cmdCopy = (char *) malloc(strlen(cmdLine)+1); /* Holds copy of the command line        */
-    char numPipes = 0;					                /* Num pipes in the command +1 (max 255  */
+    char numPipes = 0;                                  /* Num pipes in the command +1 (max 255  */
     int fd[2] = {SI, SO};                               /* Holds I/O file descriptors            */
     
     strcpy(cmdCopy, cmdLine);                           /* Make the copy                         */
@@ -261,7 +263,7 @@ char RunCommand(char *cmdLine)
         if(ExecProgram((char ***)Cmds, P)) {            /* If this returns 1, something failed   */  
             P->running = 0;                             /* Mark the process as done              */
             P->status  = 1;                             /* Set the failure status                */
-	        P->printMe = 0;                             /* Don't print the '+ completed message  */
+            P->printMe = 0;                             /* Don't print the '+ completed message  */
         } 
     }
     return 0;                                           /* Continue main loop                    */
@@ -302,13 +304,13 @@ char Redirect(char *args[], int *fd)
                     case '<':
                         NoInputFile();                  /* Error: no input file                   */        
                         break;   
-                    case '>':                           /* Error: no output file                  */
-                        NoOutputFile();
+                    case '>':                           
+                        NoOutputFile();                 /* Error: no output file                  */
                         break;
                     case '&':
                         ThrowError("Error: mislocated background sign");
                     default:
-                        ThrowError("Error: Oops");
+                        ThrowError("Error: Oops!");
                 }        
                 return 1;                               /* Bad command, return 1                  */            
             }                                           /* End - if no argument after <>          */
@@ -318,7 +320,7 @@ char Redirect(char *args[], int *fd)
                 fd[1] = open(args[i], WMODE);           /* Open for writing, WMODE in sshell.h    */            
             } else if ((sym == '<') && (fd[0] == SI)) { /* If input redirect, and in fd not set   */
                 fd[0] = open(args[i], O_RDONLY);        /* Set the input file descriptor          */
-                                                        /* @TODO Setup catchs' in case open fails */
+                                                        /* @TODO Setup catch in case open fails   */
             } else { 
                 ThrowError("Error: mislocated redirection");
                 return 1;                               /* Bad command, return 1                  */
@@ -370,7 +372,7 @@ int main(int argc, char *argv[], char *envp[])
     char keystroke, cmdLine[MAX_BUFFER];
     unsigned char tryExit = 0, keepRunning = 1;
 
-    processList = malloc(sizeof(ProcessList)); 		     /* Global list of processes being tracked          */
+    processList = malloc(sizeof(ProcessList));           /* Global list of processes being tracked          */
     History *history = (History*)malloc(sizeof(History));/* Local list of history entries                   */
     InitShell(history, &cursorPos);                      /* Initialize the shell                            */
 
@@ -425,8 +427,8 @@ mainLoop:                                                /* Shell main loop labe
                 else {                                    
                     CheckCompletedProcesses(processList);
                     DisplayPrompt(&cursorPos);
-		}                
-		break;
+		        }                
+		        break;
         
             default:                                     /* ANY OTHER KEY */
                 if (cursorPos < MAX_BUFFER) {            /* Make sure there's room in the buffer            */
@@ -440,10 +442,10 @@ mainLoop:                                                /* Shell main loop labe
     /* **************************************************************************************************** */
     if (processList->count) {                            /* If background commands are still running        */
         ThrowError("Error: active jobs still running");  /* Report the error                                */
-            if(tryExit) {                                /* If command was "exit" (as opposed to Ctrl+D)    */
-                CompleteCmd("exit", 1);                  /* Print '+ completed' message                     */
-                tryExit = 0;                             /* Reset the variable                              */
-            }
+        if(tryExit) {                                    /* If command was "exit" (as opposed to Ctrl+D)    */
+            CompleteCmd("exit", 1);                      /* Print '+ completed' message                     */
+            tryExit = 0;                                 /* Reset the variable                              */
+        }
         keepRunning = 1;                                 /* Set the while loop to continue running          */
         CheckCompletedProcesses(processList);            /* Check for completed processes                   */
         DisplayPrompt(&cursorPos);                       /* Reprint the prompt                              */
@@ -455,4 +457,4 @@ mainLoop:                                                /* Shell main loop labe
     
     return EXIT_SUCCESS;
 }
-/* ***************************************************** */
+    /* **************************************************************************************************** */
