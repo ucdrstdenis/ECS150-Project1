@@ -32,9 +32,9 @@ Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char nPipes, char 
     if (pList->top == NULL)                             /* Setup pointer to next process in list    */
         pList->top = me;
     else {                                              /* If already entries in the list 	        */
-	    curr = pList->top;
-	    while (curr->next != NULL) curr = curr->next;   /* Go to the end of the list 		        */
-	    curr->next = me;                                /* Set the next pointer to the new process  */
+        curr = pList->top;
+        while (curr->next != NULL) curr = curr->next;   /* Go to the end of the list                */
+        curr->next = me;                                /* Set the next pointer to the new process  */
    }
 
     pList->count++;                                     /* Increment count of processes in the list */
@@ -80,7 +80,7 @@ int *GetChainStatus(Process *P)
     Process *My = P;
     int *status = (int *)malloc(4*(P->nPipes));         /* Allocate space for status array  */
     while(My->child != NULL) {                          /* Iterate through children         */
-	    status[i++] = My->child->status;		/* Add the value to the array       */     
+	    status[i++] = My->child->status;                /* Add the value to the array       */
 	    if (My->child->child == NULL) break;        
 	    P->child = CopyDelete(My->child, My->child->child);       
         P->child->parent = P;                      
@@ -130,16 +130,16 @@ void CheckCompletedProcesses(ProcessList *pList)
     
 	        if (curr->next != NULL) {                   /* If there are more processes in the list      */
                 CopyDelete(curr, curr->next);           /* Copy curr->next to curr and delete next      */
-	    	    if (prev == NULL)                       /* If this is the top node in the list          */
-		            pList->top = curr;                  /* Assign the top pointer to the current node   */                  
+                if (prev == NULL)                       /* If this is the top node in the list          */
+		            pList->top = curr;                  /* Assign the top pointer to the current node   */
 	        } else {                                    /* Otherwise, no more processes in the list     */
                 free(curr);                             /* So free the node                             */
 		        pList->top = NULL;                      /* Point the top to NULL                        */
-		        if(pList->count) pList->count--;        /* Decrement the process count, prevent -1      */                
+		        if(pList->count) pList->count--;        /* Decrement the process count, prevent -1      */
 	    	    break;                                  /* Break from the while  loop                   */
             }
-            if(pList->count) pList->count--;			/* Decrement the process count, loop again      */
-        } else {				                        /* No completed processes found yet, keep going */					       
+            if(pList->count) pList->count--;            /* Decrement the process count, loop again      */
+        } else {                                        /* No completed processes found yet, keep going */
             prev = curr;            
             curr = curr->next;    
         }                                               /* End if process completed with no children    */
