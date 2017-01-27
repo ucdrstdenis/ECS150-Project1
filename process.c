@@ -68,8 +68,8 @@ char *GetChainStatus(Process *P)
         //status[i++] =(char) My->child->status;          /* Add the value to the array       */
         P->next = My->child->next;                      /* Remove the pointer from the list */
         My = My->child;                                 /* Update pointer                   */
-        if (My->parent != P)                            /* Avoid segfault                   */
-            free(My->parent);                               /* Free the child (delete from list)*/
+        //if (My->parent != P)                            /* Avoid segfault                   */
+            //free(My->parent);                               /* Free the child (delete from list)*/
     }
     sprintf(status,"%s%d",status, P->status);                   /* Parent is always last in chain   */
     //status[i++] = (char)My->status;                     /* Last child in list               */
