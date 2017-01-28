@@ -24,30 +24,30 @@ Built in commands 'exit', 'cd', and 'pwd'
 # SShell Rundown #
 A basic overview of how this program works. 
 
-```main()``` located in sshell.c does 3 things:
-- Initialize the shell with ```ShellInit()```
+`main()` located in sshell.c does 3 things:
+- Initialize the shell with `ShellInit()`
 - Process the keystroke
 - Handle exiting the application.
 
-```ShellInit()``` does 4 things:
+`ShellInit()` does 4 things:
 - Alloc/init the local history structure
 - Alloc/init the global process structure
 - Define the SIGCHLD interrupt handler. 
-- Sets the terminal to non-cannonical mode using JPorquet's noncanmode.c
+- Set the terminal to non-cannonical mode using JPorquet's noncanmode.c
 
 Keystroke processing is very straight forward:
 - When a user presses a key, the keystroke is written to STDOUT and copied to a local buffer. 
-- Up/Down arrows call ```DisplayNextEntry()``` and ```DisplayLastEntry()``` from [history.h/.c]
-- TAB, LEFT, and RIGHT arrow keys call the ```ErrorBell()``` function to sound an audible Bell.
+- Up/Down arrows call `DisplayNextEntry()` and `DisplayLastEntry()` from [history.h/.c]
+- TAB, LEFT, and RIGHT arrow keys call the `ErrorBell()` function to sound an audible Bell.
 
 When a user presses the RETURN key, 3 things happen:
 - The contents of the command line are added to the shells history.
-- The command is processed with the RunCommand() wrapper routine.
+- The command is processed with the `RunCommand()` wrapper routine.
 - The process list is checked for any processes that may have completed, and if they have, it prints thier +completed message to STDERR and removes them from the list.
 
-RunCommand() routine does 3 things:
+`RunCommand()` routine does 3 things:
 - Performs initial layer of command checking.
-- Parses the command into a ***char array, based on the pipe '|' characters.  For example, if the command was "ls -la|grep common> outfile" it would be transformed into "{{"ls","-la",NULL}, {"grep", "common", ">", "outfile", NULL}, NULL}. This is done within Pipes2Arrays() and Cmd2Array() routines.
+- Parses the command into a   ***char array, based on the pipe '|' characters.  For example, if the command `ls -la|grep common> outfile` would be transformed into "{ {"ls", "-la", NULL}, {"grep", "common", ">", "outfile", NULL}, NULL}. This is done within `Pipes2Arrays()` and `Cmd2Array()` routines.
 - The command is checked for built-in calls which are 'exit' cd' and 'pwd', and calls their subroutines. If the command is not built in, it calls ExecProgram().
 
 ExecProgram() does several things:
