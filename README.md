@@ -1,30 +1,10 @@
 # ECS150-Project1 #
-A simple shell written in c.
-
-# Features #
-Supports output redirection via '>'
-
-Supports input redirection via '<'
-
-Handles background processes via '&'
-
-Supports command piplining via '|'
-
-Tracks command line history and allows easy viewing with the Up/Down Arrow keys.
-
-Handles exit codes'
-
-Tracks background processes using a unique data structure
-
-Automatically searches the PATH using execvp and SearchPath()
-
-Built in commands 'exit', 'cd', and 'pwd'
-
+A simple shell written in c by Robert St. Denis, Brian LaBar,  & Riley Mikkelsen
 
 # SShell Rundown #
 A basic overview of how this program works. 
 
-`main()` located in ```sshell.c``` does 3 things:
+`main()` located in `sshell.c` does 3 things:
 - Initialize the shell with `ShellInit()`.
 - Process the keystroke.
 - Handle exiting the application.
@@ -139,6 +119,8 @@ char *InsertSpaces(char *cmd);                          /* Ensures ' ' before an
 /* ******************************************************/
 //char *SearchPath(char *prog);	                        /* Returns a pointer to the full path specified binary  */
 //ExecProgram(**Cmds[], N, Process *P);                 /* Function to execute a command. Recursive if piped    */
+/* **************************************************** */
+
 /* **************************************************** */
 /* Also noncanmode.h based on JPorquet's noncanmode.c   */
 /* **************************************************** */
