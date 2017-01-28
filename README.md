@@ -47,22 +47,22 @@ When a user presses the RETURN key, 3 things happen:
 
 RunCommand() routine does 3 things:
 - Performs initial layer of command checking.
-- Parses the command into a ***char array, based on the pipe '|' characters.  For example, if the command "ls -la|grep common> outfile" would be transformed into "{{"ls","-la",NULL},{"grep", "common", ">", "outfile", NULL}, NULL}. This is done with the Pipes2Arrays() and Cmd2Array() routines.
-- The command is checked for built-in calls which are 'exit' cd' and 'pwd'. If the command is not built in, it calls ExecProgram().
+- Parses the command into a ***char array, based on the pipe '|' characters.  For example, if the command was "ls -la|grep common> outfile" it would be transformed into "{{"ls","-la",NULL}, {"grep", "common", ">", "outfile", NULL}, NULL}. This is done within Pipes2Arrays() and Cmd2Array() routines.
+- The command is checked for built-in calls which are 'exit' cd' and 'pwd', and calls their subroutines. If the command is not built in, it calls ExecProgram().
 
 ExecProgram() does several things:
-Executes the commands, and uses a while loop to chain commands together, if they are piped. It also checks the command arrays for I/O redirects with a call to CheckRedirects(), which calls SetupRedirects() to return the I/O file descriptors and to do second and third level error checking.  (i.e checking the output file descriptor against any pipes the output may need to be sent to).
+ If the commands are piped, ExecProgram uses a while loop to chain the commands together. It also checks the command arrays for I/O redirects with a call to CheckRedirects(), which calls SetupRedirects() to return the I/O file descriptors and to do second and third level error checking.  (i.e checking the output file descriptor against any pipes the output may need to be sent to).
 
-The process structure can be found in [process.c/.h] since this is what gets passed around from function to function.
+At this point it's worth introducing the process structure [found in process.c/.h] since this is what gets passed around from function to function.
 
-Although the process structures'  [located in process.c/.h] main objective was to handle background routines, it also evolved into a convenient way to handle program execution, file redirecting, and command pipelining, since the I/O file descriptors, background flags, command contents, and more, can all be stored in the Process object, whose main constructor is AddProcess(). When processes are chained together, AddProcessAsChild() is used instead. The name is deceiving. It does not mean that the process is a true 'child' of the parent process in the sense we've been using it in. It's just a convenient way to iterate through the process list and string together the exit codes from piped commands. Once you get to a "parent" process in the list, the children have their own daisy-chained pointers so it's easy to collect the exit codes and remove them from the list.
+Although the process structures' main objective is to handle background routines, it also evolved into a convenient mechanism for handling program execution, file redirecting, and command pipelining. This is because the I/O file descriptors, background flags, command contents, and more, can all be stored in the Process object, whose main constructor is AddProcess(). When processes are chained together, AddProcessAsChild() is used instead. This doesn't imply the structure is a child in the true sense, it's just a convenient way to iterate through the process list and string together the exit codes from piped commands. Once you get to a "parent" process in the list, the children have their own daisy-chained pointers so it's easy to collect the exit codes and remove them from the list.
 
-Anyway, when a process is run, it calls ForkMe(), which forks the command into a child process  which calls RunMe(), while the parent waits with Wait4Me(). If the process is marked for background execution Wait4Me() uses a nonblocking waitpid() with WNOHANG. Otherwise the wait call is blocking. The ChildSignalHandler() routine is entered when the background process completes, and calls MarkProcessDone() to mark the process in the list as completed.
+When a process is run, it calls ForkMe(), which forks the command into a child process which calls RunMe(), while the parent waits with Wait4Me(). If the process is marked for background execution Wait4Me() uses a nonblocking waitpid() with WNOHANG. Otherwise the wait call is blocking. The ChildSignalHandler() routine is entered when the background process completes, and calls MarkProcessDone() to mark the process in the list as completed.
 
 Finally, we are back to step 3) from when the RETURN key was pressed. The Process List is checked for completed commands, + completed messages are printed, and the whole thing repeats.
 
 
-And if the 'exit' command or CTRL+D is pressed, the main routine checks the process list to make sure there are no outstanding processes. If there are not, it exits.
+If the 'exit' command or CTRL+D is pressed, the main routine checks the process list to make sure there are no outstanding processes. If there are not, it exits.
 
 # Header Files (API) #
 0. noncanmode.h - not really an API, just function prototypes from noncanmode.c
