@@ -222,10 +222,10 @@ char CheckCommand(char *cmd, char *isBackground)
     switch (*end){                                      /* Check the character at the end             */
 	    case '|':
             InvalidCommand();                           /* Invalid command line error                 */
-		    return 1;                                   /* Bad command, return 1                      */
+		    return 1;                           /* Bad command, return 1                      */
 
 	    case '>':
-		    if (s != *end) NoOutputFile();              /* If > is not the only character in the cmd  */
+		    if (s != *end) NoOutputFile();      /* If > is not the only character in the cmd  */
             else InvalidCommand();                      /* Otherwise Throw invalid command error      */
             return 1;                                   /* Bad command, return 1                      */
 
@@ -288,7 +288,7 @@ char CheckCommand(char *cmd, char *isBackground)
 /* Function to execute program commands                 */
 /* If function is piped, ExecProgram() is recursive.    */
 /*                                                      */
-/* Excellent recursive function, does the work of 	    */
+/* Excellent recursive function, does the work of 	*/
 /* 6 functions in < 35 lines of code. But without using */
 /* shared mem or writing to a file, could not get   	*/
 /* child exit status' back. Will save for another time. */

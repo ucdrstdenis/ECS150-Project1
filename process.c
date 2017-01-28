@@ -31,7 +31,7 @@ Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char nPipes, char 
     me->next = NULL;                                    /* No newer nodes in list yet 	            */
     if (pList->top == NULL)                             /* Setup pointer to next process in list    */
         pList->top = me;
-    else {                                              /* If already entries in the list 	        */
+    else {                                              /* If already entries in the list 	    */
         curr = pList->top;
         while (curr->next != NULL) curr = curr->next;   /* Go to the end of the list                */
         curr->next = me;                                /* Set the next pointer to the new process  */
@@ -80,7 +80,7 @@ int *GetChainStatus(Process *P)
     Process *My = P;
     int *status = (int *)malloc(4*(P->nPipes));         /* Allocate space for status array  */
     while(My->child != NULL) {                          /* Iterate through children         */
-	    status[i++] = My->child->status;                /* Add the value to the array       */
+	    status[i++] = My->child->status;            /* Add the value to the array       */
 	    if (My->child->child == NULL) break;        
 	    P->child = CopyDelete(My->child, My->child->child);       
         P->child->parent = P;                      
@@ -133,21 +133,21 @@ void CheckCompletedProcesses(ProcessList *pList)
             if (curr->next != NULL) {                   /* If there are more processes in the list      */
                 CopyDelete(curr, curr->next);           /* Copy curr->next to curr and delete next      */
                 if (prev == NULL)                       /* If this is the top node in the list          */
-		            pList->top = curr;                  /* Assign the top pointer to the current node   */
+		            pList->top = curr;          /* Assign the top pointer to the current node   */
 	        }
            
-            else {                                    /* Otherwise, no more processes in the list     */
+            else {                                      /* Otherwise, no more processes in the list     */
                 free(curr);                             /* So free the node                             */
-		        pList->top = NULL;                      /* Point the top to NULL                        */
-		        if(pList->count) pList->count--;        /* Decrement the process count, prevent -1      */
-	    	    break;                                  /* Break from the while  loop                   */
+		        pList->top = NULL;              /* Point the top to NULL                        */
+		        if(pList->count) pList->count--;/* Decrement the process count, prevent -1      */
+	    	    break;                              /* Break from the while  loop                   */
             }
             if(pList->count) pList->count--;            /* Decrement the process count, loop again      */
         } else {                                        /* No completed processes found yet, keep going */
             prev = curr;            
             curr = curr->next;    
         }                                               /* End if process completed with no children    */
-    }						                    	    /* End while loop 				                */
+    }						        /* End while loop 				*/
 }
 
 /* **************************************************** */
@@ -173,7 +173,7 @@ char MarkProcessDone(ProcessList *pList, pid_t PID, int status)
 /* **************************************************** */
 Process *CopyDelete(Process  *To, Process *From)
 {
-    if (From !=NULL) {                                  /* Don't do anything if From node is NULL 	    */
+    if (From !=NULL) {                                  /* Don't do anything if From node is NULL 	*/
         To->cmd     = From->cmd;                        /* Copy the command string                      */
         To->PID     = From->PID;                        /* Copy the PID                                 */
         To->status  = From->status;                     /* Copy the exit status                         */
@@ -184,12 +184,12 @@ Process *CopyDelete(Process  *To, Process *From)
         To->parent  = NULL;                             /* Avoid segfaults, set this later if needed    */
         To->fd[0]   = From->fd[0];                      /* Copy the input file descriptor               */        
         To->fd[1]   = From->fd[1];                      /* Copy the input file descriptor               */     
-        To->printMe = From->printMe;                    /* Copy the print settings descriptor 		    */    
+        To->printMe = From->printMe;                    /* Copy the print settings descriptor 		*/    
         To->next    = From->next;                       /* Copy the pointer to the next node in list    */
-        free(From);                                     /* Delete the From node           		        */
-	    if(processList->count)                          /* Prevent from becoming -1                     */
+        free(From);                                     /* Delete the From node           		*/
+	    if(processList->count)                      /* Prevent from becoming -1                     */
             processList->count--;                       /* Decrement the process count                  */
     }
-    return To;                                          /* Return the copy of the process 		        */
+    return To;                                          /* Return the copy of the process 	        */
 }
 /* **************************************************** */
