@@ -136,11 +136,13 @@ char *InsertSpaces(char *cmd);                          /* Ensures ' ' before an
 
 # Build / Run #
 This program was compiled using the linux gcc 6.3.1 compiler.
-To build, simply type `make` and the Makefile does the rest.
+
+To build, simply type `make` and the `Makefile` does the rest.
+
 After building, the shell can be run by typing `./sshell`
 
 # Testing #
-The sshell_test.sh script provided by John Chan 
+Testing was performed with the  `sshell_test.sh` script provided by John Chan. 
 
 # Contributors #
 Robert St. Denis
