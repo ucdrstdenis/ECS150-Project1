@@ -24,12 +24,12 @@ Built in commands 'exit', 'cd', and 'pwd'
 # SShell Rundown #
 A basic overview of how this program works. 
 
-main(), located in sshell.c does 3 things:
-- Initialize the shell with ShellInit()
+```main()``` located in sshell.c does 3 things:
+- Initialize the shell with ```ShellInit()```
 - Process the keystroke
 - Handle exiting the application.
 
-ShellInit() does 4 things:
+```ShellInit()``` does 4 things:
 - Alloc/init the local history structure
 - Alloc/init the global process structure
 - Define the SIGCHLD interrupt handler. 
@@ -37,8 +37,8 @@ ShellInit() does 4 things:
 
 Keystroke processing is very straight forward:
 - When a user presses a key, the keystroke is written to STDOUT and copied to a local buffer. 
-- Up/Down arrows call DisplayNextEntry() and DisplayLastEntry() from [history.h/.c]
-- TAB, LEFT, and RIGHT arrow keys call the ErrorBell() function to sound an audible Bell.
+- Up/Down arrows call ```DisplayNextEntry()``` and ```DisplayLastEntry()``` from [history.h/.c]
+- TAB, LEFT, and RIGHT arrow keys call the ```ErrorBell()``` function to sound an audible Bell.
 
 When a user presses the RETURN key, 3 things happen:
 - The contents of the command line are added to the shells history.
