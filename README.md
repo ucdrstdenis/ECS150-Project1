@@ -159,5 +159,4 @@ Riley Mikkelsen
 5. [Readme.md Example] (https://gist.github.com/jxson/1784669)
 
 ## Unused References ##
-1. [Example of recursive piping](https://gist.github.com/zed/7835043)
-See bottom of common.c for more information.
+1. [Example of recursive piping](https://gist.github.com/zed/7835043) - See unused functions in common.c
