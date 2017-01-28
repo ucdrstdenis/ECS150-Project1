@@ -146,7 +146,9 @@ Testing was performed with the  `sshell_test.sh` script provided by John Chan.
 
 # Contributors #
 Robert St. Denis
+
 Brian Labar
+
 Riley Mikkelsen
 
 ## References ##
