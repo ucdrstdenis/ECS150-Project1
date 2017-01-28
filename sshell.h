@@ -22,7 +22,7 @@ void Wait4Me(Process *Me);                              /* Executes blocking or 
 char Redirect(char *args[], int *fd);                   /* Sets up input/output file descriptors                */
 char CheckRedirect(char **cmds[], Process *P, int N);   /* Sets up redirects and checks if piped                */
 char **Cmd2Array (char *cmd);                       	/* Breaks up  a command into an array of arguments      */
-char ***Pipes2Array (char *cmd, char *numPipes);        /* Breaks up command into arrays of piped arguments     */
+char ***Pipes2Arrays (char *cmd, char *numPipes);       /* Breaks up command into arrays of piped arguments     */
 /* **************************************************** */
 
 #endif
