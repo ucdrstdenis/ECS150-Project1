@@ -57,7 +57,7 @@ char PrintWDir(char *args[])
     }
 
     if ((*args[1] == '>') && (args[2] != NULL)) {       /* If the first argument is '>', set out fd */
-        fd = open(args[2], WMODE);                      /* Open a file for writing                  */
+        fd = open(args[2], WMODE, 0755);                /* Open a file for writing                  */
         write(fd, workingDir, strlen(workingDir));
         return 0;
     } else {
