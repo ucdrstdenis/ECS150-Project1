@@ -1,4 +1,4 @@
-# ECS150-Project1 #
+# SShell Synopsys #
 A simple shell written in c.
 
 # SShell Rundown #
@@ -41,10 +41,13 @@ The `Process` structure is the main object that gets passed around from function
 - When a process is run, it calls `ForkMe()`, which forks the command into a child process that calls `RunMe()` for `execvp()`, while the parent waits with `Wait4Me()`. 
 - If the process is marked for background execution `Wait4Me()` uses a nonblocking `waitpid()` with `WNOHANG`. The `ChildSignalHandler()` routine is entered when the background process completes, and calls `MarkProcessDone()` to mark the process in the list as completed.
 
-Finally, we are back to step 3) from when the RETURN key was pressed. The Process List is checked for completed commands, + completed messages are printed, and the whole thing repeats.
+Finally, we are back to step 3) from when the RETURN key was pressed. 
 
+The Process List is checked for completed commands, + completed messages are printed, and the whole thing repeats.
 
-If the 'exit' command or CTRL+D is pressed, the main routine checks the process list to make sure there are no outstanding processes. If there are not, it exits.
+If the 'exit' command or CTRL+D is pressed, the main routine checks the process list to make sure there are no outstanding processes. 
+
+If there are not, it exits.
 
 # Header Files (API) #
 ``` c
@@ -125,16 +128,22 @@ char *InsertSpaces(char *cmd);                          /* Ensures ' ' before an
 /* **************************************************** */
 /* Also noncanmode.h based on JPorquet's noncanmode.c   */
 /* **************************************************** */
-```
+``
+# Build / Run #
+This program is compiled using the linux gcc compiler.
+To build, simply type `make` and the Makefile does the rest.
+After building, the shell can be run by typeing `./sshell`
 
 ### References ###
-1. [Example of linked list history](http://stackoverflow.com/questions/20588556/linked-list-implementation-to-store-command-history-in-my-shell)
+1. [Basic linked list history](http://stackoverflow.com/questions/20588556/linked-list-implementation-to-store-command-history-in-my-shell)
 
 2. [Makefile Reference 1](http://stackoverflow.com/questions/1484817/how-do-i-make-a-simple-makefile-for-gcc-on-linux)
 
 3. [Makefile Reference 2](http://mrbook.org/blog/tutorials/make/)
 
 4. [GitHub Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+
+5. [Readme.md Example] (https://gist.github.com/jxson/1784669)
 
 ### Unused References ###
 1. [Example of recursive piping](https://gist.github.com/zed/7835043)
