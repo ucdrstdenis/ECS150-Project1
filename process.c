@@ -125,7 +125,8 @@ void CheckCompletedProcesses(ProcessList *pList)
                     stArray = GetChainStatus(curr);     /* Save exit status, delete all                 */
                     CompleteChain(curr, stArray);       /* Print completed message                      */
                 }
-            }  else if (curr->printMe)                  /* Otherwise,not piped, check print enabled     */
+            }
+            else if (curr->printMe)                     /* Otherwise,not piped, check print enabled     */
                 CompleteCmd(curr->cmd, curr->status);   /* If it is, print + completed message          */
     
 	        if (curr->next != NULL) {                   /* If there are more processes in the list      */
