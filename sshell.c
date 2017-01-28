@@ -317,9 +317,9 @@ char Redirect(char *args[], int *fd)
 
             args[i-1] = NULL;                           /* Replace <> with NULL, terminates array */
             if((sym == '>') && (fd[1] == SO)){          /* If output redirect, and out fd not set */
-                fd[1] = open(args[i], WMODE, 0222);     /* Open for writing, WMODE in sshell.h    */
+                fd[1] = open(args[i], WMODE, 0755);     /* Open for writing, WMODE in sshell.h    */
             } else if ((sym == '<') && (fd[0] == SI)) { /* If input redirect, and in fd not set   */
-                fd[0] = open(args[i], O_RDONLY, 0444);  /* Set the input file descriptor          */
+                fd[0] = open(args[i], O_RDONLY, 0755;  /* Set the input file descriptor          */
                                                         /* @TODO Setup catch in case open fails   */
             } else { 
                 ThrowError("Error: mislocated redirection");
