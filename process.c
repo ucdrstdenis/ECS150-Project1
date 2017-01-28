@@ -126,14 +126,17 @@ void CheckCompletedProcesses(ProcessList *pList)
                     CompleteChain(curr, stArray);       /* Print completed message                      */
                 }
             }
-            else if (curr->printMe)                     /* Otherwise,not piped, check print enabled     */
+            else if(curr->printMe) {                    /* Otherwise,not piped, check print enabled     */
                 CompleteCmd(curr->cmd, curr->status);   /* If it is, print + completed message          */
-    
-	        if (curr->next != NULL) {                   /* If there are more processes in the list      */
+            }
+	        
+            if (curr->next != NULL) {                   /* If there are more processes in the list      */
                 CopyDelete(curr, curr->next);           /* Copy curr->next to curr and delete next      */
                 if (prev == NULL)                       /* If this is the top node in the list          */
 		            pList->top = curr;                  /* Assign the top pointer to the current node   */
-	        } else {                                    /* Otherwise, no more processes in the list     */
+	        }
+           
+            else {                                    /* Otherwise, no more processes in the list     */
                 free(curr);                             /* So free the node                             */
 		        pList->top = NULL;                      /* Point the top to NULL                        */
 		        if(pList->count) pList->count--;        /* Decrement the process count, prevent -1      */
