@@ -124,7 +124,7 @@ char *InsertSpaces(char *cmd);                          /* Ensures ' ' before an
 /* **************************************************** */
 /* Also noncanmode.h based on JPorquet's noncanmode.c   */
 /* **************************************************** */
-c ``
+```
 
 ### References ###
 1. [Example of linked list history](http://stackoverflow.com/questions/20588556/linked-list-implementation-to-store-command-history-in-my-shell)
