@@ -24,40 +24,41 @@ Built in commands 'exit', 'cd', and 'pwd'
 # SShell Rundown #
 A basic overview of how this program works. 
 
-`main()` located in sshell.c does 3 things:
-- Initialize the shell with `ShellInit()`
-- Process the keystroke
+`main()` located in ```sshell.c``` does 3 things:
+- Initialize the shell with `ShellInit()`.
+- Process the keystroke.
 - Handle exiting the application.
 
 `ShellInit()` does 4 things:
-- Alloc/init the local history structure
-- Alloc/init the global process structure
-- Define the SIGCHLD interrupt handler. 
-- Set the terminal to non-cannonical mode using JPorquet's noncanmode.c
+- Alloc/init the local history structure.
+- Alloc/init the global process structure.
+- Define the `ChildSignalHandler()` for the SIGCHLD signal.
+- Set the terminal to non-cannonical mode using JPorquet's noncanmode.c.
 
 Keystroke processing is very straight forward:
 - When a user presses a key, the keystroke is written to STDOUT and copied to a local buffer. 
-- Up/Down arrows call `DisplayNextEntry()` and `DisplayLastEntry()` from [history.h/.c]
-- TAB, LEFT, and RIGHT arrow keys call the `ErrorBell()` function to sound an audible Bell.
+- Up/Down arrows call `DisplayNextEntry()` and `DisplayLastEntry()` from [history.h/.c].
+- TAB, LEFT, and RIGHT arrow keys call the `ErrorBell()` function to sound an audible bell.
 
 When a user presses the RETURN key, 3 things happen:
-- The contents of the command line are added to the shells history.
+- The contents of the command line are added to the shell's history.
 - The command is processed with the `RunCommand()` wrapper routine.
 - The process list is checked for any processes that may have completed, and if they have, it prints thier +completed message to STDERR and removes them from the list.
 
 `RunCommand()` routine does 3 things:
 - Performs initial layer of command checking.
 - Parses the command into a   ***char array, based on the pipe `|` characters.  For example, the command "ls -la|grep common> outfile" would be transformed into { {"ls", "-la", NULL}, {"grep", "common", ">", "outfile", NULL}, NULL}. This is done within `Pipes2Arrays()` and `Cmd2Array()` routines.
-- The command is checked for built-in calls which are 'exit' cd' and 'pwd', and calls their subroutines. If the command is not built in, it calls `ExecProgram()`
+- The command is checked for built-in calls which are `exit` `cd` and `pwd`, and calls their subroutines. If the command is not built in, it calls `ExecProgram()`
 
-ExecProgram() does several things:
- If the commands are piped, ExecProgram uses a while loop to chain the commands together. It also checks the command arrays for I/O redirects with a call to CheckRedirects(), which calls SetupRedirects() to return the I/O file descriptors and to do second and third level error checking.  (i.e checking the output file descriptor against any pipes the output may need to be sent to).
+`ExecProgram()` does several things:
+- If the commands are piped, `ExecProgram()` uses a while loop to chain the commands together. 
+- It also checks the command arrays for I/O redirects with a call to `CheckRedirects()`, which calls `SetupRedirects()` to return the I/O file descriptors and perform second and third level error checking. This includes checking the output file descriptor against any pipes the output may need to be sent to).
 
-At this point it's worth introducing the process structure [found in process.c/.h] since this is what gets passed around from function to function.
+At this point it's worth introducing the process structure [found in process.c/.h] since this the main structure that gets passed around from function to function.
 
-Although the process structures' main objective is to handle background routines, it also evolved into a convenient mechanism for handling program execution, file redirecting, and command pipelining. This is because the I/O file descriptors, background flags, command contents, and more, can all be stored in the Process object, whose main constructor is AddProcess(). When processes are chained together, AddProcessAsChild() is used instead. This doesn't imply the structure is a child in the true sense, it's just a convenient way to iterate through the process list and string together the exit codes from piped commands. Once you get to a "parent" process in the list, the children have their own daisy-chained pointers so it's easy to collect the exit codes and remove them from the list.
+Although the process structures' main objective is to handle background routines, it also evolved into a convenient mechanism for handling program execution, file redirecting, and command pipelining. This is because the I/O file descriptors, background flags, command contents, can all be stored in the Process object, whose main constructor is `AddProcess()`. When processes are chained together, `AddProcessAsChild()` is also used. This doesn't imply the structure is a child in the true sense, it's just a convenient way to iterate through the process list and string together the exit codes from piped commands.
 
-When a process is run, it calls ForkMe(), which forks the command into a child process which calls RunMe(), while the parent waits with Wait4Me(). If the process is marked for background execution Wait4Me() uses a nonblocking waitpid() with WNOHANG. Otherwise the wait call is blocking. The ChildSignalHandler() routine is entered when the background process completes, and calls MarkProcessDone() to mark the process in the list as completed.
+When a process is run, it calls `ForkMe()`, which forks the command into a child process which calls `RunMe()` to `execvp()`, while the parent waits with `Wait4Me()`. If the process is marked for background execution `Wait4Me()` uses a nonblocking `waitpid()` with WNOHANG. The `ChildSignalHandler()` routine is entered when the background process completes, and calls MarkProcessDone() to mark the process in the list as completed.
 
 Finally, we are back to step 3) from when the RETURN key was pressed. The Process List is checked for completed commands, + completed messages are printed, and the whole thing repeats.
 
@@ -65,14 +66,10 @@ Finally, we are back to step 3) from when the RETURN key was pressed. The Proces
 If the 'exit' command or CTRL+D is pressed, the main routine checks the process list to make sure there are no outstanding processes. If there are not, it exits.
 
 # Header Files (API) #
-0. noncanmode.h - not really an API, just function prototypes from noncanmode.c
-1. history.h
+1. sshell.h
 2. common.h 
 3. process.h 
-4. sshell.h
-
-# Screenshot #
-Screenshot with some reference commands. Use the ones from the instructions, maybe some new ones like "ls | grep common | wc -l | sleep &"   (This basically translates to sleep 3& if its run from within our git directory).
+4. history.h
 
 ### References ###
 1. [Example of linked list history](http://stackoverflow.com/questions/20588556/linked-list-implementation-to-store-command-history-in-my-shell)
@@ -85,3 +82,4 @@ Screenshot with some reference commands. Use the ones from the instructions, may
 
 ### Unused References ###
 1. [Example of recursive piping](https://gist.github.com/zed/7835043)
+See bottom of common.c for more information.
