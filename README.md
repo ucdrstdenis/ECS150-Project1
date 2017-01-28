@@ -68,7 +68,45 @@ If the 'exit' command or CTRL+D is pressed, the main routine checks the process 
 # Header Files (API) #
 ``` c
 /* **************************************************** */
-/*                   Common functions                   */
+/*                        sshell.h                      */
+/* **************************************************** */
+void InitShell (History *history, int *cursorPos);      /* Initialize the shell and relevant objects            */
+char ChangeDir(char *args[]);                           /* Handles 'cd' commands                                */
+char PrintWDir(char *args[]);                           /* Handles 'pwd' commands                               */
+char RunCommand (char *cmdLine);                    	/* Wrapper to execute whatever is on the command line   */
+char ExecProgram(char **cmds[], Process *P);            /* Execute program commands, inner-looped when piped    */
+void ForkMe(char *cmds[], Process *Me);                 /* Forks a process. Child executes, parent waits.       */
+void RunMe(char *cmds[], Process *Me);                  /* Execute a single execvp call post fork()             */
+void Wait4Me(Process *Me);                              /* Executes blocking or non-blocking wait               */
+char Redirect(char *args[], int *fd);                   /* Sets up input/output file descriptors                */
+char CheckRedirect(char **cmds[], Process *P, int N);   /* Sets up redirects and checks if piped                */
+char **Cmd2Array (char *cmd);                       	/* Breaks up  a command into an array of arguments      */
+char ***Pipes2Array (char *cmd, char *numPipes);        /* Breaks up command into arrays of piped arguments     */
+/* **************************************************** */
+
+/* **************************************************** */
+/*                      history.h                       */
+/* **************************************************** */
+void AddHistory(History *history, char *cmdLine, int cmdLen); 	        /* Adds a new entry to the history list                */
+void DisplayNextEntry(History *history, char *cmdLine, int *cursorPos); /* Displays next history entry in the command line     */
+void DisplayPrevEntry(History *history, char *cmdLine, int *cursorPos); /* Displays previous history entry in the command line */
+void RemoveLastEntry(History *history);                                 /* Removes the entry at the bottom of the history list */
+/* **************************************************** */
+
+/* **************************************************** */
+/*                       process.h                      */
+/* **************************************************** */
+void CompleteChain (Process *P, int *xArray);                                                     /* Prints '+ completed' messages for chains       */
+int *GetChainStatus(Process *P);                                                                  /* Get the exit status codes from piped commands  */
+Process *CopyDelete(Process *To, Process *From);                                                  /* Copy a process to another process, then delete */
+void CheckCompletedProcesses(ProcessList *pList);                                                 /* Check if any processes have completed          */
+char MarkProcessDone(ProcessList *pList, pid_t PID, int status);                                  /* Mark process with matching PID as completed    */
+Process *AddProcessAsChild(ProcessList *pList, Process *P, pid_t cPID, char *cmd);                /* Create a new process marked as child of parent */
+Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char nPipes, char isBG, int *fd);   /* Adds a process struct to the list of processes  */ 
+/* **************************************************** */
+
+/* **************************************************** */
+/*                       common.h                       */
 /* **************************************************** */
 void SayHello (void);                                   /* Prints the hello message. Removed for auto-testing   */
 void SayGoodbye (void);                                 /* Prints the exit message                              */
@@ -80,7 +118,7 @@ void DisplayPrompt (int *cursorPos);                    /* Displace the main ssh
 void CompleteCmd (char *cmd, int exitCode);             /* Prints + completed messages to STDOUT                */
 void Dup2AndClose(int old, int bnew);                   /* Runs dup2() and close(), performs error checking     */
 /* **************************************************** */
-/*                    Error functions                   */
+/*              common.h - Error Functions              */
 /* **************************************************** */
 void ThrowError (char *message);                        /* Print error message to STDERR                        */
 void NoInputFile (void);                                /* Prints Error: no input file to STDERR                */
@@ -89,7 +127,7 @@ void InvalidCommand (void);                             /* Prints Error: invalid
 void BadInputRedirect (void);                           /* Prints Error: mislocated input redirection           */
 void BadOutputRedirect (void);                          /* Prints Error: mislocated output redirection          */
 /* **************************************************** */
-/*                  Parsing functions                   */
+/*             common.h - Parsing Functions             */
 /* **************************************************** */
 char CheckCommand(char *cmd, char *isBackground);   	/* Check for invalid placement of special characters    */
 char Check4Space(char key);                             /* Checks if character is whitespace or not             */
@@ -97,16 +135,14 @@ char Check4Special(char key);                           /* Checks if special cha
 char *RemoveWhitespace(char *string);                   /* Strips trailing and leading whitespace from a string */
 char *InsertSpaces(char *cmd);                          /* Ensures ' ' before and after all <>& characters      */
 /* ******************************************************/
-/*                  Unused functions                    */
+/*             common.h - Unused functions              */
 /* ******************************************************/
 //char *SearchPath(char *prog);	                        /* Returns a pointer to the full path specified binary  */
 //ExecProgram(**Cmds[], N, Process *P);                 /* Function to execute a command. Recursive if piped    */
 /* **************************************************** */
-```
-1. sshell.h
-2. common.h 
-3. process.h 
-4. history.h
+/* Also noncanmode.h based on JPorquet's noncanmode.c   */
+/* **************************************************** */
+``
 
 ### References ###
 1. [Example of linked list history](http://stackoverflow.com/questions/20588556/linked-list-implementation-to-store-command-history-in-my-shell)
