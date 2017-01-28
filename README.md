@@ -1,5 +1,5 @@
 # ECS150-Project1 #
-A simple shell written in c by Robert St. Denis, Brian LaBar,  & Riley Mikkelsen
+A simple shell written in c.
 
 # SShell Rundown #
 A basic overview of how this program works. 
@@ -34,11 +34,12 @@ When a user presses the RETURN key, 3 things happen:
 - If the commands are piped, `ExecProgram()` uses a while loop to chain the commands together. 
 - It also checks the command arrays for I/O redirects with a call to `CheckRedirects()`, which calls `SetupRedirects()` to return the I/O file descriptors and perform second and third level error checking. This includes checking the output file descriptor against any pipes the output may need to be sent to.
 
-At this point it's worth introducing the process structure [found in process.c] since this the main structure that gets passed around from function to function.
-
-Although the process structures' main objective is to handle background routines, it also evolved into a convenient mechanism for handling program execution, file redirecting, and command pipelining. This is because the I/O file descriptors, background flags, command contents, can all be stored in the Process object, whose main constructor is `AddProcess()`. When processes are chained together, `AddProcessAsChild()` is also used. This doesn't imply the structure is a child in the true sense, it's just a convenient way to iterate through the process list and string together the exit codes from piped commands.
-
-When a process is run, it calls `ForkMe()`, which forks the command into a child process that calls `RunMe()` for `execvp()`, while the parent waits with `Wait4Me()`. If the process is marked for background execution `Wait4Me()` uses a nonblocking `waitpid()` with `WNOHANG`. The `ChildSignalHandler()` routine is entered when the background process completes, and calls `MarkProcessDone()` to mark the process in the list as completed.
+The `Process` structure is the main object that gets passed around from function to function.
+- Although the process structures' main objective is to handle background routines, it evolved into a convenient mechanism for handling program execution, file redirecting, and command pipelining. 
+- This is because the I/O file descriptors, background flags, command contents, can all be stored in the Process object, whose main constructor is `AddProcess()`
+- When processes are chained together, `AddProcessAsChild()` is also used. This doesn't imply the structure is a child in the true sense, it's just a convenient way to iterate through the process list and string together the exit codes from piped commands.
+- When a process is run, it calls `ForkMe()`, which forks the command into a child process that calls `RunMe()` for `execvp()`, while the parent waits with `Wait4Me()`. 
+- If the process is marked for background execution `Wait4Me()` uses a nonblocking `waitpid()` with `WNOHANG`. The `ChildSignalHandler()` routine is entered when the background process completes, and calls `MarkProcessDone()` to mark the process in the list as completed.
 
 Finally, we are back to step 3) from when the RETURN key was pressed. The Process List is checked for completed commands, + completed messages are printed, and the whole thing repeats.
 
