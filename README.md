@@ -47,8 +47,8 @@ When a user presses the RETURN key, 3 things happen:
 
 `RunCommand()` routine does 3 things:
 - Performs initial layer of command checking.
-- Parses the command into a   ***char array, based on the pipe '|' characters.  For example, if the command `ls -la|grep common> outfile` would be transformed into "{ {"ls", "-la", NULL}, {"grep", "common", ">", "outfile", NULL}, NULL}. This is done within `Pipes2Arrays()` and `Cmd2Array()` routines.
-- The command is checked for built-in calls which are 'exit' cd' and 'pwd', and calls their subroutines. If the command is not built in, it calls ExecProgram().
+- Parses the command into a   ***char array, based on the pipe `|` characters.  For example, the command "ls -la|grep common> outfile" would be transformed into { {"ls", "-la", NULL}, {"grep", "common", ">", "outfile", NULL}, NULL}. This is done within `Pipes2Arrays()` and `Cmd2Array()` routines.
+- The command is checked for built-in calls which are 'exit' cd' and 'pwd', and calls their subroutines. If the command is not built in, it calls `ExecProgram()`
 
 ExecProgram() does several things:
  If the commands are piped, ExecProgram uses a while loop to chain the commands together. It also checks the command arrays for I/O redirects with a call to CheckRedirects(), which calls SetupRedirects() to return the I/O file descriptors and to do second and third level error checking.  (i.e checking the output file descriptor against any pipes the output may need to be sent to).
