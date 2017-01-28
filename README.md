@@ -1,8 +1,7 @@
 # ECS150-Project1 #
-A simple shell written in c. Better description here.
+A simple shell written in c.
 
 # Features #
-Look through the Project 1 instructions, and basically re-iterate what is there, but salesmanshipy.
 Supports output redirection via '>'
 
 Supports input redirection via '<'
@@ -11,38 +10,50 @@ Handles background processes via '&'
 
 Supports command piplining via '|'
 
+Tracks command line history and allows easy viewing with the Up/Down Arrow keys.
+
 Handles exit codes'
 
 Tracks background processes using a unique data structure
 
 Automatically searches the PATH using execvp and SearchPath()
 
-Tracks command line history and allows easy viewing with the Up/Down Arrow keys.
-
-Built in commands 'exit', 'cd', and 'pwd''
-
-Etc. I'm pretty sure we meet every requirement, but someone should double check'
+Built in commands 'exit', 'cd', and 'pwd'
 
 
 # SShell Rundown #
 A basic overview of how this program works. 
 
-main(), located in sshell.c does 3 things - Initialize the shell with ShellInit(), process the keystroke, and handle exiting the application.
-ShellInit() does 4 things - alloc/init the local history structure, alloc/init the global process structure, and define the SIGCHLD interrupt handler. It also sets the terminal to non-cannonical mode via Joel's routines in noncanmode.c (with our added noncanmode.h file).
+main(), located in sshell.c does 3 things:
+- Initialize the shell with ShellInit()
+- Process the keystroke
+- Handle exiting the application.
 
-Keystroke processing is very straight forward - when a user presses a key, the keystroke is written to STDOUT and copied to a local buffer. Up/Down arrows call DisplayNextEntry() and DisplayLastEntry() from [history.h/.c], TAB, LEFT, and RIGHT arrow keys call the ErrorBell() function to make the shell go BOOP.
+ShellInit() does 4 things:
+- Alloc/init the local history structure
+- Alloc/init the global process structure
+- Define the SIGCHLD interrupt handler. 
+- Sets the terminal to non-cannonical mode using JPorquet's noncanmode.c
 
-When a user presses the RETURN key, 3 things happen, in order:
-1) The contents of the command line are added to the shells history.
-2) The command is processed with the RunCommand() wrapper routine.
-3) The process list is checked for any processes that may have completed, and if they have, it prints thier +completed message to STDERR and removes them from the list.
+Keystroke processing is very straight forward:
+- When a user presses a key, the keystroke is written to STDOUT and copied to a local buffer. 
+- Up/Down arrows call DisplayNextEntry() and DisplayLastEntry() from [history.h/.c]
+- TAB, LEFT, and RIGHT arrow keys call the ErrorBell() function to sound an audible Bell.
 
-The RunCommand() routine does 3 things:
-1) Performs initial layer of command checking.
-2) Parses the command into a ***char array, based on the pipe '|' characters.  For example, if the command "ls -la|grep common> outfile" would be transformed into "{{"ls","-la",NULL},{"grep", "common", ">", "outfile", NULL}, NULL}. This is done with the Pipes2Arrays() and Cmd2Array() routines.
-3) The command is checked for built-in calls which are 'exit' cd' and 'pwd'. pwd also handles output redirects. If the command is not built in, it calls ExecProgram() which executes the commands, and uses a while loop to chain commands together if they are piped. It also checks the command arrays for I/O redirects with a call to CheckRedirects(), which calls SetupRedirects() to return the I/O file descriptors and to do second and third level error checking.  (i.e checking the output file descriptor against any pipes the output may need to be sent to).
+When a user presses the RETURN key, 3 things happen:
+- The contents of the command line are added to the shells history.
+- The command is processed with the RunCommand() wrapper routine.
+- The process list is checked for any processes that may have completed, and if they have, it prints thier +completed message to STDERR and removes them from the list.
 
-At this point, it's worth introducing the process structure, since this is what gets passed around from function to function.
+RunCommand() routine does 3 things:
+- Performs initial layer of command checking.
+- Parses the command into a ***char array, based on the pipe '|' characters.  For example, if the command "ls -la|grep common> outfile" would be transformed into "{{"ls","-la",NULL},{"grep", "common", ">", "outfile", NULL}, NULL}. This is done with the Pipes2Arrays() and Cmd2Array() routines.
+- The command is checked for built-in calls which are 'exit' cd' and 'pwd'. If the command is not built in, it calls ExecProgram().
+
+ExecProgram() does several things:
+Executes the commands, and uses a while loop to chain commands together, if they are piped. It also checks the command arrays for I/O redirects with a call to CheckRedirects(), which calls SetupRedirects() to return the I/O file descriptors and to do second and third level error checking.  (i.e checking the output file descriptor against any pipes the output may need to be sent to).
+
+The process structure can be found in [process.c/.h] since this is what gets passed around from function to function.
 
 Although the process structures'  [located in process.c/.h] main objective was to handle background routines, it also evolved into a convenient way to handle program execution, file redirecting, and command pipelining, since the I/O file descriptors, background flags, command contents, and more, can all be stored in the Process object, whose main constructor is AddProcess(). When processes are chained together, AddProcessAsChild() is used instead. The name is deceiving. It does not mean that the process is a true 'child' of the parent process in the sense we've been using it in. It's just a convenient way to iterate through the process list and string together the exit codes from piped commands. Once you get to a "parent" process in the list, the children have their own daisy-chained pointers so it's easy to collect the exit codes and remove them from the list.
 
@@ -56,7 +67,7 @@ And if the 'exit' command or CTRL+D is pressed, the main routine checks the proc
 # Header Files (API) #
 0. noncanmode.h - not really an API, just function prototypes from noncanmode.c
 1. history.h
-2. common.h         Is there some way we can just copy-past the code the was it is already and make it look nice for this section? IDK, what do you guys think?
+2. common.h 
 3. process.h 
 4. sshell.h
 
