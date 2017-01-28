@@ -71,6 +71,8 @@ char ***Pipes2Array (char *cmd, char *numPipes);        /* Breaks up command int
 /* **************************************************** */
 /*                      history.h                       */
 /* **************************************************** */
+/*      See file for History and Entry structures       */
+/* **************************************************** */
 void AddHistory(History *history, char *cmdLine, int cmdLen); 	        /* Adds a new entry to the history list                */
 void DisplayNextEntry(History *history, char *cmdLine, int *cursorPos); /* Displays next history entry in the command line     */
 void DisplayPrevEntry(History *history, char *cmdLine, int *cursorPos); /* Displays previous history entry in the command line */
@@ -79,6 +81,8 @@ void RemoveLastEntry(History *history);                                 /* Remov
 
 /* **************************************************** */
 /*                       process.h                      */
+/* **************************************************** */
+/*    See file for Process and ProcessList structs      */
 /* **************************************************** */
 void CompleteChain (Process *P, int *xArray);                                                     /* Prints '+ completed' messages for chains       */
 int *GetChainStatus(Process *P);                                                                  /* Get the exit status codes from piped commands  */
@@ -129,12 +133,21 @@ char *InsertSpaces(char *cmd);                          /* Ensures ' ' before an
 /* Also noncanmode.h based on JPorquet's noncanmode.c   */
 /* **************************************************** */
 ``
-# Build / Run #
-This program is compiled using the linux gcc compiler.
-To build, simply type `make` and the Makefile does the rest.
-After building, the shell can be run by typeing `./sshell`
 
-### References ###
+# Build / Run #
+This program was compiled using the linux gcc 6.3.1 compiler.
+To build, simply type `make` and the Makefile does the rest.
+After building, the shell can be run by typing `./sshell`
+
+# Testing #
+The sshell_test.sh script provided by John Chan 
+
+# Contributors #
+Robert St. Denis
+Brian Labar
+Riley Mikkelsen
+
+## References ##
 1. [Basic linked list history](http://stackoverflow.com/questions/20588556/linked-list-implementation-to-store-command-history-in-my-shell)
 
 2. [Makefile Reference 1](http://stackoverflow.com/questions/1484817/how-do-i-make-a-simple-makefile-for-gcc-on-linux)
@@ -145,6 +158,6 @@ After building, the shell can be run by typeing `./sshell`
 
 5. [Readme.md Example] (https://gist.github.com/jxson/1784669)
 
-### Unused References ###
+## Unused References ##
 1. [Example of recursive piping](https://gist.github.com/zed/7835043)
 See bottom of common.c for more information.
