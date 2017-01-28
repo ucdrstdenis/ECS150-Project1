@@ -41,13 +41,11 @@ The `Process` structure is the main object that gets passed around from function
 - When a process is run, it calls `ForkMe()`, which forks the command into a child process that calls `RunMe()` for `execvp()`, while the parent waits with `Wait4Me()`. 
 - If the process is marked for background execution `Wait4Me()` uses a nonblocking `waitpid()` with `WNOHANG`. The `ChildSignalHandler()` routine is entered when the background process completes, and calls `MarkProcessDone()` to mark the process in the list as completed.
 
-Finally, we are back to step 3) from when the RETURN key was pressed. 
+Finally, we are back to the last step from when the RETURN key was pressed. 
 
 The Process List is checked for completed commands, + completed messages are printed, and the whole thing repeats.
 
 If the 'exit' command or CTRL+D is pressed, the main routine checks the process list to make sure there are no outstanding processes. 
-
-If there are not, it exits.
 
 # Header Files (API) #
 ``` c
@@ -159,4 +157,4 @@ Riley Mikkelsen
 5. [Readme.md Example] (https://gist.github.com/jxson/1784669)
 
 ## Unused References ##
-1. [Example of recursive piping](https://gist.github.com/zed/7835043) - See unused functions in common.c
+1. [Example of recursive piping](https://gist.github.com/zed/7835043) - See unused `ExecProgram()` in common.c
