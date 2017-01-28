@@ -131,7 +131,6 @@ char *InsertSpaces(char *cmd);                          /* Ensures ' ' before an
 /* Also noncanmode.h based on JPorquet's noncanmode.c   */
 /* **************************************************** */
 ``
-
 # Build / Run #
 This program was compiled using the linux gcc 6.3.1 compiler.
 To build, simply type `make` and the Makefile does the rest.
