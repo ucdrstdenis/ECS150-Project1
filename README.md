@@ -151,7 +151,7 @@ Brian Labar
 
 Riley Mikkelsen
 
-# Acknowledgements #
+## Acknowledgements ##
 Eduard Grinberg for teaching me "old school" c on an Intel 80196KC
 
 ## References ##
