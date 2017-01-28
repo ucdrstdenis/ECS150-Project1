@@ -82,7 +82,7 @@ Process *CopyDelete(Process *To, Process *From);                                
 void CheckCompletedProcesses(ProcessList *pList);                                                 /* Check if any processes have completed          */
 char MarkProcessDone(ProcessList *pList, pid_t PID, int status);                                  /* Mark process with matching PID as completed    */
 Process *AddProcessAsChild(ProcessList *pList, Process *P, pid_t cPID, char *cmd);                /* Create a new process marked as child of parent */
-Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char nPipes, char isBG, int *fd);   /* Adds a process struct to the list of processes  */ 
+Process *AddProcess(ProcessList *pList, pid_t PID, char *cmd, char nPipes, char isBG, int *fd);   /* Adds a process struct to the list of processes */ 
 /* **************************************************** */
 
 /* **************************************************** */
@@ -124,7 +124,7 @@ char *InsertSpaces(char *cmd);                          /* Ensures ' ' before an
 /* **************************************************** */
 /* Also noncanmode.h based on JPorquet's noncanmode.c   */
 /* **************************************************** */
-``
+c ``
 
 ### References ###
 1. [Example of linked list history](http://stackoverflow.com/questions/20588556/linked-list-implementation-to-store-command-history-in-my-shell)
