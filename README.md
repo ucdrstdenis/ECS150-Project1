@@ -151,6 +151,9 @@ Brian Labar
 
 Riley Mikkelsen
 
+# Acknowledgements #
+Eduard Grinberg for teaching me "old school" c on an Intel 80196KC
+
 ## References ##
 1. [Basic linked list history](http://stackoverflow.com/questions/20588556/linked-list-implementation-to-store-command-history-in-my-shell)
 
