@@ -1,5 +1,5 @@
-#Files in this directory were provided by the instructor. 
-#They are not required to compile.
+# Files in this directory were provided by the instructor Joël Porquet.
+# They are not required to compile.
 
 #1) noncanmode.c - Example of setting terminal to non-canonical mode for keystroke input
 #2) sshell - Example basic shell
