@@ -343,7 +343,7 @@ char Redirect(char *args[], int *fd)
             } else { 
                 ThrowError("Error: mislocated redirection");
                 return 1;                               /* Bad command, return 1                  */
-            }                                           /* End if '<' or if '>'			          */
+            }                                           /* End if '<' or if '>'                   */
         }                                               /* End if args contain <>&                */  
     }                                                   /* End while loop                         */
     return 0;                                           /* Good command, return 0                 */
