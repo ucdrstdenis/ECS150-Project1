@@ -5,7 +5,7 @@ A simple shell written in c.
 A basic overview of how this program works. 
 
 `main()` located at the bottom of `sshell.c` does 3 things:
-- Initialize the shell with ``` c InitShell()````.
+- Initialize the shell with `InitShell()`.
 - Process the keystroke.
 - Handle exiting the application.
 
