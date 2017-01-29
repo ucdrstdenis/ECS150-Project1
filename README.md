@@ -4,7 +4,7 @@ A simple shell written in c.
 # SShell Rundown #
 A basic overview of how this program works. 
 
-`main()` located at the bottom of `sshell.c`, does 3 things:
+`main()` located at the bottom of `sshell.c` does 3 things:
 - Initialize the shell with `InitShell()`.
 - Process the keystroke.
 - Handle exiting the application.
@@ -41,11 +41,11 @@ The `*Process` structure is the main object that gets passed around from functio
 - When a process is run, it calls `ForkMe()`, which forks the command into a child process that calls `RunMe()` for `execvp()`, while the parent waits with `Wait4Me()`. 
 - If the process is marked for background execution `Wait4Me()` uses a nonblocking `waitpid()` with `WNOHANG`. The `ChildSignalHandler()` routine is entered when the background process completes, and calls `MarkProcessDone()` to mark the process in the list as completed.
 
-Finally, we are back to the last step from when the RETURN key was pressed. 
+Finally, we are back to the last step from when the `RETURN` key was pressed. 
 
 The `*Process List` is checked for completed commands, + completed messages are printed, and the whole thing repeats.
 
-If the 'exit' command or CTRL+D is pressed, the main routine checks the process list to make sure there are no outstanding processes. 
+If the 'exit' command or `CTRL+D` is pressed, the main routine checks the process list to make sure there are no outstanding processes. 
 
 # Header Files (API) #
 ``` c
@@ -60,6 +60,7 @@ char ExecProgram(char **cmds[], Process *P);            /* Execute program comma
 void ForkMe(char *cmds[], Process *Me);                 /* Forks a process. Child executes, parent waits.       */
 void RunMe(char *cmds[], Process *Me);                  /* Execute a single execvp call post fork()             */
 void Wait4Me(Process *Me);                              /* Executes blocking or non-blocking wait               */
+int OpenMe(const char *Me, const char *Mode);		/* Calls fopen(), checks for errors 			*/
 char Redirect(char *args[], int *fd);                   /* Sets up input/output file descriptors                */
 char CheckRedirect(char **cmds[], Process *P, int N);   /* Sets up redirects and checks if piped                */
 char **Cmd2Array (char *cmd);                       	/* Breaks up  a command into an array of arguments      */

@@ -23,6 +23,7 @@ void DisplayNextEntry(History *history, char *cmdLine, int *cursorPos)
         write(STDIN_FILENO, history->current->command, strlen(history->current->command));
         strcpy(cmdLine, history->current->command);
         *cursorPos = strlen(cmdLine);
+
     }
 }
 /* **************************************************** */

@@ -5,9 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+
+#include <string.h>
+// @TODO Try to get rid of using string.h by using
+// Joel Porquet's tip - https://joel.porquet.org/wiki/hacking/c_tips/
 
 /* **************************************************** */
 /*              User - defined .h files                 */
@@ -52,14 +55,15 @@ char PrintWDir(char *args[])
     sprintf(workingDir, "%s\n", workingDir);            /* Add a new line character                 */
    
     if ((args[1] == NULL || *args[1] != '>')) {         /* If no redirect args, write to STDOUT     */
-        write(STDOUT_FILENO, workingDir, strlen(workingDir));
+        write(SO, workingDir, strlen(workingDir));      /* Write the working directory to STDOUT    */
         return 0;
     }
 
     if ((*args[1] == '>') && (args[2] != NULL)) {       /* If the first argument is '>', set out fd */
-        fd = open(args[2], WMODE, 0755);                /* Open a file for writing                  */
-        write(fd, workingDir, strlen(workingDir));
+        fd = OpenMe(args[2], WMODE);                    /* Open a file for writing                  */
+        write(fd, workingDir, strlen(workingDir));      /* Write the working directory to file      */
         return 0;
+
     } else {
         NoOutputFile();                                 /* Error: no output file message            */
         return 1;
@@ -158,8 +162,8 @@ void Wait4Me(Process *Me)
 }
 /* **************************************************** */
 /* **************************************************** */
-/* Forks a process. Child executes, parent waits.       */
-/* Also the contents of my thoughts during quizzes.     */
+/* ForkMe() - Forks a process .Child runs, parent waits */
+/* Also my thought contents during quizzes.             */
 /* **************************************************** */
 void ForkMe(char *cmds[], Process *Me)
 {
@@ -179,6 +183,20 @@ void ForkMe(char *cmds[], Process *Me)
 /* **************************************************** */
 
 /* **************************************************** */
+/* Calls open, checks for errors                        */
+/* **************************************************** */
+int OpenMe(const char *Me, const int Mode)
+{
+    int fd = open(Me, Mode, 0755);			            /* Try to open the file 		        */
+    if (fd == -1) {					                    /* If fopen fails 			            */
+        perror("fopen");				                /* Report the error 			        */
+        return -1;					                    /* Return 1 				            */
+	}
+    return fd;
+}
+/* **************************************************** */
+
+/* **************************************************** */
 /* Execute program commands. Looped if they are piped   */
 /* **************************************************** */
 char ExecProgram(char **cmds[], Process *P)
@@ -187,7 +205,7 @@ char ExecProgram(char **cmds[], Process *P)
     int N = 0;                                          /* Pipe iterator                         */
     int firstPipe[2];                                   /* FD for chaining pipes together        */
     int secPipe[2];                                     /* FD for chaining pipes togetehr        */
-    int inPipe = SI;                                    /* Pointer that points to 1 of 2 pipes   */
+    int inPipe = STDIN_FILENO;                          /* Pointer that points to 1 of 2 pipes   */
     Me = P;                                             /* Me points to the parent in the chain  */
    
     while ((cmds[N+1] != NULL) && cmds[N+2] != NULL) {  /* While pipes to chain together exist   */
@@ -287,7 +305,7 @@ char CheckRedirect(char **cmds[], Process *P, int N)
 }
 /* **************************************************** */
 /* **************************************************** */
-/* Sets up redirective file descriptors                 */
+/* Sets up redirective file descriptors if present      */
 /* Returns file descriptors via fd pointer              */
 /* Returns 0 if good command, 1 if bad command          */
 /* **************************************************** */
@@ -317,14 +335,15 @@ char Redirect(char *args[], int *fd)
 
             args[i-1] = NULL;                           /* Replace <> with NULL, terminates array */
             if((sym == '>') && (fd[1] == SO)){          /* If output redirect, and out fd not set */
-                fd[1] = open(args[i], WMODE, 0755);     /* Open for writing, WMODE in sshell.h    */
-            } else if ((sym == '<') && (fd[0] == SI)) { /* If input redirect, and in fd not set   */
-                fd[0] = open(args[i], O_RDONLY, 0755);  /* Set the input file descriptor          */
-                                                        /* @TODO Setup catch in case open fails   */
+                if((fd[1] = OpenMe(args[i], WMODE))==-1)/* Open for writing, if f=1 fopen failed  */
+			        return 1;			                /* Open failed 			                  */            
+	        } else if ((sym == '<') && (fd[0] == SI)){  /* If input redirect, and in fd not set   */
+                if((fd[0] = OpenMe(args[i], RMODE))==-1)/* Set the input file descriptor          */
+                    return 1;                           /* Open Failed                            */
             } else { 
                 ThrowError("Error: mislocated redirection");
                 return 1;                               /* Bad command, return 1                  */
-            }
+            }						                    /* End if '<' or if '>'			          */
         }                                               /* End if args contain <>&                */  
     }                                                   /* End while loop                         */
     return 0;                                           /* Good command, return 0                 */
@@ -372,7 +391,7 @@ int main(int argc, char *argv[], char *envp[])
     char keystroke, cmdLine[MAX_BUFFER];
     unsigned char tryExit = 0, keepRunning = 1;
 
-    processList = malloc(sizeof(ProcessList));           /* Global list of processes being tracked          */
+    processList = malloc(sizeof(ProcessList));           /* Global list of processes being tracked, @TODO make it local */
     History *history = (History*)malloc(sizeof(History));/* Local list of history entries                   */
     InitShell(history, &cursorPos);                      /* Initialize the shell                            */
 
@@ -427,7 +446,7 @@ mainLoop:                                                /* Shell main loop labe
                 else {                                    
                     CheckCompletedProcesses(processList);
                     DisplayPrompt(&cursorPos);
-		        }                
+		}                
 		        break;
         
             default:                                     /* ANY OTHER KEY */
