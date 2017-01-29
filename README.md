@@ -4,29 +4,26 @@ A simple shell written in c.
 # SShell Rundown #
 A basic overview of how this program works. 
 
-``` c
-main()
-```
- located at the bottom of `sshell.c` does 3 things:
+`main()` located at the bottom of `sshell.c` does 3 things:
 - Initialize the shell with ``` c InitShell()````.
 - Process the keystroke.
 - Handle exiting the application.
 
 `InitShell()` does 4 things:
-- Alloc/init the local history structure `*History`.
-- Alloc/init the global process structure `*ProcessList`.
-- Define the `ChildSignalHandler()` for the `SIGCHLD` signal.
+- Alloc/init the local history structure - History.
+- Alloc/init the global process structure - ProcessList.
+- Define the `ChildSignalHandler()` for the SIGCHLD signal.
 - Set the terminal to non-cannonical mode using Joël Porquet's noncanmode.c.
 
 Keystroke processing is very straight forward:
-- When a user presses a key, the keystroke is written to `STDOUT` and copied to a local buffer. 
+- When a user presses a key, the keystroke is written to STDOUT and copied to a local buffer. 
 - UP/DOWN arrows call `DisplayNextEntry()` and `DisplayLastEntry()` from the history API.
 - TAB, LEFT, and RIGHT arrow keys call the `ErrorBell()` function to sound an audible bell.
 
 When a user presses the RETURN key, 3 things happen:
 - The contents of the command line are added to the shell's history.
 - The command is processed with the `RunCommand()` wrapper routine.
-- The process list is checked for any processes that may have completed, and if they have, it prints thier `+ completed ` message to `STDERR` and removes them from the list.
+- The process list is checked for any processes that may have completed, and if they have, it prints thier `+ completed ` message to STDERR and removes them from the list.
 
 `RunCommand()` routine does 3 things:
 - Performs initial layer of command checking.
@@ -46,7 +43,7 @@ The `*Process` structure is the main object that gets passed around from functio
 
 Finally, we are back to the last step from when the RETURN key was pressed. 
 
-The `*Process List` is checked for completed commands, + completed messages are printed, and the whole thing repeats.
+The Process List is checked for completed commands, `+ completed` messages are printed, and the whole thing repeats.
 
 If the 'exit' command or CTRL+D is pressed, the main routine checks the process list to make sure there are no outstanding processes. 
 
@@ -141,7 +138,7 @@ This program was compiled using the linux gcc 6.3.1 compiler.
 
 To build, cd to the folder in a terminal.
 
-Type `make` and the `Makefile` does the rest.
+Then type `make` and the `Makefile` does the rest.
 
 After building, the shell can be run by typing `./sshell`
 
