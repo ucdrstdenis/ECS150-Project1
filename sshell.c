@@ -9,8 +9,8 @@
 #include <sys/types.h>
 
 #include <string.h>
-// @TODO Try to not to use string.h by using
-// Joel Porquet's tip - https://joel.porquet.org/wiki/hacking/c_tips/
+// @TODO Try not to use string.h by using
+// Joel Porquet's C tip - https://joel.porquet.org/wiki/hacking/c_tips/
 
 /* **************************************************** */
 /*              User - defined .h files                 */
