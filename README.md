@@ -4,8 +4,11 @@ A simple shell written in c.
 # SShell Rundown #
 A basic overview of how this program works. 
 
-`main()` located at the bottom of `sshell.c` does 3 things:
-- Initialize the shell with `InitShell()`.
+``` c
+main()
+```
+ located at the bottom of `sshell.c` does 3 things:
+- Initialize the shell with ``` c InitShell()````.
 - Process the keystroke.
 - Handle exiting the application.
 
@@ -20,7 +23,7 @@ Keystroke processing is very straight forward:
 - UP/DOWN arrows call `DisplayNextEntry()` and `DisplayLastEntry()` from the history API.
 - TAB, LEFT, and RIGHT arrow keys call the `ErrorBell()` function to sound an audible bell.
 
-When a user presses the `RETURN` key, 3 things happen:
+When a user presses the RETURN key, 3 things happen:
 - The contents of the command line are added to the shell's history.
 - The command is processed with the `RunCommand()` wrapper routine.
 - The process list is checked for any processes that may have completed, and if they have, it prints thier `+ completed ` message to `STDERR` and removes them from the list.
@@ -36,16 +39,16 @@ When a user presses the `RETURN` key, 3 things happen:
 
 The `*Process` structure is the main object that gets passed around from function to function.
 - Although the process structures' main objective is to handle background routines, it evolved into a convenient mechanism for handling program execution, file redirecting, and command pipelining. 
-- This is because the I/O file descriptors, background flags, command contents, and more can all be stored in the `*Process` object, whose main constructor is `AddProcess()`.
+- This is because the I/O file descriptors, background flags, command contents, and more can all be stored in the Process object, whose main constructor is `AddProcess()`.
 - When processes are chained together, `AddProcessAsChild()` is also used. This doesn't imply the structure is a child in the true sense, it's just a convenient way to iterate through the process list and string together the exit codes from piped commands.
 - When a process is run, it calls `ForkMe()`, which forks the command into a child process that calls `RunMe()` for `execvp()`, while the parent waits with `Wait4Me()`. 
-- If the process is marked for background execution `Wait4Me()` uses a nonblocking `waitpid()` with `WNOHANG`. The `ChildSignalHandler()` routine is entered when the background process completes, and calls `MarkProcessDone()` to mark the process in the list as completed.
+- If the process is marked for background execution `Wait4Me()` uses a nonblocking `waitpid()` with WNOHANG. The `ChildSignalHandler()` routine is entered when the background process completes, and calls `MarkProcessDone()` to mark the process in the list as completed.
 
-Finally, we are back to the last step from when the `RETURN` key was pressed. 
+Finally, we are back to the last step from when the RETURN key was pressed. 
 
 The `*Process List` is checked for completed commands, + completed messages are printed, and the whole thing repeats.
 
-If the 'exit' command or `CTRL+D` is pressed, the main routine checks the process list to make sure there are no outstanding processes. 
+If the 'exit' command or CTRL+D is pressed, the main routine checks the process list to make sure there are no outstanding processes. 
 
 # Header Files (API) #
 ``` c
