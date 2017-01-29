@@ -188,9 +188,9 @@ void ForkMe(char *cmds[], Process *Me)
 int OpenMe(const char *Me, const int Mode)
 {
     int fd = open(Me, Mode, 0755);                      /* Try to open the file 		        */
-    if (fd == -1) {                                     /* If fopen fails 			            */
-        perror("fopen");                                /* Report the error 			        */
-        return -1;                                      /* Return 1 				            */
+    if (fd == -1) {                                     /* If fopen fails                       */
+        perror("fopen");                                /* Report the error                     */
+        return -1;                                      /* Return 1                             */
 	}
     return fd;
 }
@@ -235,7 +235,7 @@ char ExecProgram(char **cmds[], Process *P)
         if (CheckRedirect(cmds, cP, N)) return 1;       /* Setup redirects, check against pipes  */
         pipe(firstPipe);                                /* Create the Pipe                       */
         cP->fd[1] = firstPipe[1];                       /* Child will write to the pipe          */
-        cP->fd[0] = inPipe;                             /* Child reads from in pipe 		 */
+        cP->fd[0] = inPipe;                             /* Child reads from in pipe              */
         ForkMe(cmds[N++], cP);                          /* Fork the process, exec program, wait  */
         inPipe = firstPipe[0];                          /* inPipe points to firstPipe[0]         */
     } 
@@ -336,7 +336,7 @@ char Redirect(char *args[], int *fd)
             args[i-1] = NULL;                           /* Replace <> with NULL, terminates array */
             if((sym == '>') && (fd[1] == SO)){          /* If output redirect, and out fd not set */
                 if((fd[1] = OpenMe(args[i], WMODE))==-1)/* Open for writing, if f=1 fopen failed  */
-			        return 1;			                /* Open failed 			                  */            
+			        return 1;                           /* Open failed 			                  */            
 	        } else if ((sym == '<') && (fd[0] == SI)){  /* If input redirect, and in fd not set   */
                 if((fd[0] = OpenMe(args[i], RMODE))==-1)/* Set the input file descriptor          */
                     return 1;                           /* Open Failed                            */
