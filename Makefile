@@ -4,7 +4,7 @@ HEADERS = noncanmode.h common.h history.h process.h sshell.h
 SOURCES = noncanmode.c common.c history.c process.c sshell.c
 OBJECTS = $(SOURCES:.c=.o)
 TARGET  = sshell
-
+ 
 default: all
 
 all: $(SOURCES) $(TARGET)
