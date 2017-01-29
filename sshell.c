@@ -181,9 +181,8 @@ void ForkMe(char *cmds[], Process *Me)
     }
 }
 /* **************************************************** */
-
 /* **************************************************** */
-/* Calls open, checks for errors                        */
+/* Calls open(), checks for errors                      */
 /* **************************************************** */
 int OpenMe(const char *Me, const int Mode)
 {
