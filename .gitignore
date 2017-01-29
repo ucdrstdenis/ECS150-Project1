@@ -1,3 +1,6 @@
+# Git bundles
+*.bundle
+
 # OS X Hidden Files
 *.DS_Store
 
@@ -7,7 +10,6 @@ sshell
 # Files created during testing
 sshell_test_dir
 test_d
-
 
 # Object files
 *.o
