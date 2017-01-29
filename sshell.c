@@ -330,16 +330,16 @@ char Redirect(char *args[], int *fd)
                     default:
                         ThrowError("Error: Oops!");
                 }        
-				return 1;								/* Bad command, return 1                  */            
+                return 1;                               /* Bad command, return 1                  */            
             }                                           /* End - if no argument after <>          */
 
             args[i-1] = NULL;                           /* Replace <> with NULL, terminates array */
             if((sym == '>') && (fd[1] == SO)){          /* If output redirect, and out fd not set */
                 if((fd[1] = OpenMe(args[i], WMODE))==-1)/* Open for writing, if f=1 fopen failed  */
                     return 1;                           /* Open failed                            */            
-	        } else if ((sym == '<') && (fd[0] == SI)){  /* If input redirect, and in fd not set   */
+            } else if ((sym == '<') && (fd[0] == SI)){  /* If input redirect, and in fd not set   */
                 if((fd[0] = OpenMe(args[i], RMODE))==-1)/* Set the input file descriptor          */
-                    return 1;							/* Open Failed						      */
+                    return 1;                           /* Open Failed                            */
             } else { 
                 ThrowError("Error: mislocated redirection");
                 return 1;                               /* Bad command, return 1                  */
