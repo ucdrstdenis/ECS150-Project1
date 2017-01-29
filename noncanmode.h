@@ -1,6 +1,6 @@
 #ifndef _NONCANMODE_H
 #define _NONCANMODE_H
-
+  
 /* ************************************ */
 /* Originally from Joel's noncanmode.c  */
 /* ************************************ */

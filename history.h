@@ -16,7 +16,7 @@ typedef struct History {
     Entry *top;                                         /* Most recent entry                                */
     Entry *current;                                     /* Entry currently being viewed via. up/down arrows */
 } History;
-
+ 
 /* **************************************************** */
 /*                   History Functions                  */
 /* **************************************************** */

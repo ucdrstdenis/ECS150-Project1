@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 #include "noncanmode.h"
-
+ 
 /* ************************************ */
 /* Originally from Joel's noncanmode.c  */
 /* ************************************ */

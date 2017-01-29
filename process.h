@@ -23,7 +23,7 @@ typedef struct ProcessList {                            /* Maintains list of run
     Process *top;                                       /* Top process in the list                  */
 } ProcessList;
 /* **************************************************** */
-
+ 
 /* **************************************************** */
 /*                  Global Structures                   */
 /* **************************************************** */
