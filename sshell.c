@@ -9,7 +9,7 @@
 #include <sys/types.h>
 
 #include <string.h>
-// @TODO Try to get rid of using string.h by using
+// @TODO Try to not to use string.h by using
 // Joel Porquet's tip - https://joel.porquet.org/wiki/hacking/c_tips/
 
 /* **************************************************** */
@@ -187,10 +187,10 @@ void ForkMe(char *cmds[], Process *Me)
 /* **************************************************** */
 int OpenMe(const char *Me, const int Mode)
 {
-    int fd = open(Me, Mode, 0755);			            /* Try to open the file 		        */
-    if (fd == -1) {					                    /* If fopen fails 			            */
-        perror("fopen");				                /* Report the error 			        */
-        return -1;					                    /* Return 1 				            */
+    int fd = open(Me, Mode, 0755);                      /* Try to open the file 		        */
+    if (fd == -1) {                                     /* If fopen fails 			            */
+        perror("fopen");                                /* Report the error 			        */
+        return -1;                                      /* Return 1 				            */
 	}
     return fd;
 }

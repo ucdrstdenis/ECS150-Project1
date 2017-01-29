@@ -60,7 +60,7 @@ char ExecProgram(char **cmds[], Process *P);            /* Execute program comma
 void ForkMe(char *cmds[], Process *Me);                 /* Forks a process. Child executes, parent waits.       */
 void RunMe(char *cmds[], Process *Me);                  /* Execute a single execvp call post fork()             */
 void Wait4Me(Process *Me);                              /* Executes blocking or non-blocking wait               */
-int OpenMe(const char *Me, const char *Mode);		/* Calls fopen(), checks for errors 			*/
+int OpenMe(const char *Me, const int Mode);		/* Calls fopen(), checks for errors 			*/
 char Redirect(char *args[], int *fd);                   /* Sets up input/output file descriptors                */
 char CheckRedirect(char **cmds[], Process *P, int N);   /* Sets up redirects and checks if piped                */
 char **Cmd2Array (char *cmd);                       	/* Breaks up  a command into an array of arguments      */
